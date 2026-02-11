@@ -136,16 +136,20 @@ npm start
 
 **Frontend (Vercel):**
 ```bash
-# Из папки frontend
-cd frontend
-
+# Из корневой папки проекта
 # Установите Vercel CLI если не установлен
-npm i -g vercel
+npm install -g vercel
 
-# Разверните
-vercel --prod
+# Войдите в аккаунт
+vercel login
 
-# Добавьте переменную окружения BACKEND_URL с URL вашего backend
+# Разверните только frontend
+vercel --prod --cwd frontend
+
+# Или настройте через dashboard Vercel:
+# 1. Импортируйте репозиторий
+# 2. Укажите папку frontend как root directory
+# 3. Добавьте переменные окружения
 ```
 
 **Backend (Railway/Render/VPS):**
