@@ -117,6 +117,8 @@ npm run dev
 
 ### Продакшн сборка
 
+#### Локальный запуск в продакшене:
+
 1. **Сборка фронтенда:**
 ```bash
 cd frontend
@@ -128,6 +130,36 @@ npm start
 ```bash
 cd backend
 npm start
+```
+
+#### Развертывание на Vercel + VPS:
+
+**Frontend (Vercel):**
+```bash
+# Из папки frontend
+cd frontend
+
+# Установите Vercel CLI если не установлен
+npm i -g vercel
+
+# Разверните
+vercel --prod
+
+# Добавьте переменную окружения BACKEND_URL с URL вашего backend
+```
+
+**Backend (Railway/Render/VPS):**
+```bash
+# Разверните backend на Railway.app или Render.com
+# или на VPS с помощью PM2
+
+cd backend
+npm install
+
+# Для Railway/Render - просто подключите GitHub repo
+# Для VPS:
+npm install -g pm2
+pm2 start server.js --name "mind-map-backend"
 ```
 
 ## 📁 Структура проекта
