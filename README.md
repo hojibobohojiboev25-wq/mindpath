@@ -148,8 +148,13 @@ vercel --prod --cwd frontend
 
 # Или настройте через dashboard Vercel:
 # 1. Импортируйте репозиторий
-# 2. Укажите папку frontend как root directory
-# 3. Добавьте переменные окружения
+# 2. В настройках проекта укажите:
+#    - Root Directory: frontend
+#    - Build Command: npm run build
+#    - Output Directory: .next (оставьте пустым)
+# 3. Добавьте переменные окружения:
+#    - NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot
+#    - BACKEND_URL = https://your-backend-url.com/api
 ```
 
 **Backend (Railway/Render/VPS):**
@@ -161,9 +166,35 @@ cd backend
 npm install
 
 # Для Railway/Render - просто подключите GitHub repo
+# Railway автоматически обнаружит server.js
+
 # Для VPS:
 npm install -g pm2
 pm2 start server.js --name "mind-map-backend"
+
+# Для Docker развертывания:
+docker build -t mindpath-backend .
+docker run -p 3001:3001 -d mindpath-backend
+```
+
+### 🔄 Принудительный перезапуск Vercel развертывания:
+
+Если Vercel использует старую версию кода:
+
+1. **В Vercel Dashboard:**
+   - Перейдите в ваш проект
+   - Settings → Git
+   - Нажмите "Redeploy" или создайте новый deployment
+
+2. **Через CLI:**
+```bash
+vercel --prod --cwd frontend --force
+```
+
+3. **Или создайте пустой коммит:**
+```bash
+git commit --allow-empty -m "Trigger Vercel rebuild"
+git push
 ```
 
 ## 📁 Структура проекта

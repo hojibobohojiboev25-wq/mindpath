@@ -1,0 +1,15 @@
+# Ignore backend files
+../backend
+../deploy-frontend.sh
+../docker-compose.yml
+../README.md
+../QUICKSTART.md
+../.gitignore
+../package.json
+../package-lock.json
+
+# Ignore root level files
+../*
+
+# Keep only frontend files
+!**
