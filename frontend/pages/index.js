@@ -11,16 +11,23 @@ export default function Home() {
 
   useEffect(() => {
     // Check localStorage for auth state
+    console.log('🔍 Checking auth state on page load...');
     const storedAuth = localStorage.getItem('telegram_auth');
+    console.log('Stored auth data:', storedAuth);
+
     if (storedAuth) {
       try {
         const authData = JSON.parse(storedAuth);
+        console.log('Parsed auth data:', authData);
         setUser(authData.user);
         setIsAuthenticated(true);
+        console.log('✅ User authenticated:', authData.user);
       } catch (error) {
-        console.error('Error parsing stored auth:', error);
+        console.error('❌ Error parsing stored auth:', error);
         localStorage.removeItem('telegram_auth');
       }
+    } else {
+      console.log('ℹ️ No stored auth data found');
     }
     setLoading(false);
   }, []);
@@ -91,6 +98,7 @@ export default function Home() {
                     setUser(null);
                     setIsAuthenticated(false);
                     localStorage.removeItem('telegram_auth');
+                    console.log('🗑️ Auth data cleared from localStorage');
                   }}
                   className="text-xs text-gray-500 hover:text-gray-700"
                 >
@@ -171,9 +179,18 @@ export default function Home() {
                 Добро пожаловать, {user?.firstName || user?.username}!
               </h2>
 
+              <div className="text-center mb-8">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <p className="text-green-800 font-medium">🎉 Авторизация успешна!</p>
+                  <p className="text-green-700 text-sm mt-1">
+                    Теперь вы можете создать свою персональную карту мышления
+                  </p>
+                </div>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                 <Link href="/questionnaire" className="block">
-                  <div className="card hover:shadow-lg transition-shadow cursor-pointer">
+                  <div className="card hover:shadow-lg transition-shadow cursor-pointer border-2 border-primary-200 hover:border-primary-400">
                     <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-3xl">📝</span>
                     </div>
@@ -183,6 +200,11 @@ export default function Home() {
                     <p className="text-gray-600">
                       Заполните анкету для создания вашей персональной карты мышления
                     </p>
+                    <div className="mt-4 text-center">
+                      <span className="inline-block bg-primary-500 text-white text-sm px-3 py-1 rounded-full">
+                        Начать →
+                      </span>
+                    </div>
                   </div>
                 </Link>
 

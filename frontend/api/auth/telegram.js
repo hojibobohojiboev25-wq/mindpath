@@ -79,7 +79,13 @@ export default async function handler(req, res) {
       avatarUrl: authData.photo_url || null
     };
 
-    res.json({
+    console.log('✅ Telegram auth successful for user:', {
+      id: user.id,
+      username: user.username,
+      firstName: user.firstName
+    });
+
+    const responseData = {
       success: true,
       user: {
         id: user.id,
@@ -88,7 +94,10 @@ export default async function handler(req, res) {
         lastName: user.lastName,
         avatarUrl: user.avatarUrl
       }
-    });
+    };
+
+    console.log('📤 Sending auth response:', responseData);
+    res.json(responseData);
 
   } catch (error) {
     console.error('Auth error:', error);

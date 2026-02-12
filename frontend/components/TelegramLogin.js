@@ -37,19 +37,28 @@ export default function TelegramLogin({ onLogin }) {
         console.log('Auth response status:', response.status);
         return response.json();
       })
-      .then(data => {
-        console.log('Auth response data:', data);
-        if (data.success && data.user) {
-          // Store auth data and reload to show authenticated state
-          localStorage.setItem('telegram_auth', JSON.stringify({
-            user: data.user,
-            timestamp: Date.now()
-          }));
-          window.location.reload();
-        } else {
-          alert('Ошибка авторизации: ' + (data.error || 'Неизвестная ошибка'));
-        }
-      })
+              .then(data => {
+                console.log('Auth response data:', data);
+                if (data.success && data.user) {
+                  // Store auth data
+                  const authData = {
+                    user: data.user,
+                    timestamp: Date.now()
+                  };
+                  localStorage.setItem('telegram_auth', JSON.stringify(authData));
+                  console.log('Auth data saved to localStorage:', authData);
+
+                  // Show success message and redirect
+                  alert('Авторизация успешна! Перенаправление...');
+
+                  // Force page reload to show authenticated state
+                  setTimeout(() => {
+                    window.location.href = window.location.href;
+                  }, 1000);
+                } else {
+                  alert('Ошибка авторизации: ' + (data.error || 'Неизвестная ошибка'));
+                }
+              })
       .catch(error => {
         console.error('Auth error:', error);
         alert('Ошибка сети при авторизации');
