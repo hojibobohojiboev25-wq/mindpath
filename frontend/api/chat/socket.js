@@ -71,10 +71,20 @@ async function handler(req, res) {
 
       await updateStore((draft) => {
         const users = toActiveUsersMap(draft.chat.users);
-        const user = users.get(messageData.userId);
+        let user = users.get(messageData.userId);
         if (!user) {
-          responsePayload = { status: 400, body: { error: 'User not found' } };
-          return draft;
+          if (!messageData.userName) {
+            responsePayload = { status: 400, body: { error: 'User not found' } };
+            return draft;
+          }
+          user = {
+            id: messageData.userId,
+            name: messageData.userName,
+            avatar: messageData.userAvatar || '👤',
+            joinedAt: nowIso,
+            lastSeen: nowIso
+          };
+          users.set(user.id, user);
         }
 
         const recentMessages = (draft.chat.messages || []).filter(

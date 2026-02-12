@@ -169,6 +169,8 @@ export default function GlobalChat() {
           action: 'send_message',
           messageData: {
             userId: userIdRef.current,
+            userName: user.name,
+            userAvatar: user.avatar || '👤',
             content: newMessage.trim()
           }
         }),

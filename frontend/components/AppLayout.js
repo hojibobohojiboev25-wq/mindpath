@@ -59,9 +59,26 @@ export default function AppLayout({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-6">
         {children}
       </main>
+
+      <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-xl backdrop-blur lg:hidden">
+        {nav.map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            aria-label={item.label}
+            className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg transition-colors ${
+              active === item.id
+                ? 'bg-indigo-600 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <span>{item.icon}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

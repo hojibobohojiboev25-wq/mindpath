@@ -14,7 +14,7 @@
 
 @layer components {
   .app-bg {
-    @apply bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50;
+    @apply bg-gradient-to-br from-slate-100 via-indigo-100 to-violet-100;
   }
 
   .app-logo {
@@ -26,11 +26,11 @@
   }
 
   .app-nav-link-active {
-    @apply bg-slate-900 text-white hover:bg-slate-800 hover:text-white;
+    @apply bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white;
   }
 
   .btn-primary {
-    @apply rounded-xl bg-blue-600 px-4 py-2 font-medium text-white transition-colors duration-200 hover:bg-blue-700;
+    @apply rounded-xl bg-indigo-600 px-4 py-2 font-medium text-white transition-colors duration-200 hover:bg-indigo-700;
   }
 
   .btn-secondary {
