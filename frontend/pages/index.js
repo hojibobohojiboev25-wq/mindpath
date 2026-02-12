@@ -44,6 +44,8 @@ export default function Home() {
       });
       setUser(null);
       setIsAuthenticated(false);
+      // Clear any stored auth data
+      localStorage.removeItem('telegram_auth');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -85,6 +87,16 @@ export default function Home() {
                   className="btn-secondary text-sm"
                 >
                   Выйти
+                </button>
+                <button
+                  onClick={() => {
+                    setUser(null);
+                    setIsAuthenticated(false);
+                    localStorage.removeItem('telegram_auth');
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Сбросить
                 </button>
               </div>
             )}

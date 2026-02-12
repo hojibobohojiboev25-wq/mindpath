@@ -21,6 +21,8 @@
 **Переменные окружения в Vercel:**
 - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot`
 - `TELEGRAM_BOT_TOKEN = ваш-telegram-bot-token`
+- `OPENAI_API_KEY = ваш-openai-api-key`
+- `STABILITY_API_KEY = ваш-stability-api-key`
 
 ## 🚀 Особенности
 
