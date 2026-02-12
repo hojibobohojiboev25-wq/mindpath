@@ -229,39 +229,6 @@ export default function Home() {
                   </Link>
                 </p>
               </div>
-                <Link href="/questionnaire" className="block">
-                  <div className="card hover:shadow-lg transition-shadow cursor-pointer border-2 border-primary-200 hover:border-primary-400">
-                    <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl">📝</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Пройти опрос
-                    </h3>
-                    <p className="text-gray-600">
-                      Заполните анкету для создания вашей персональной карты мышления
-                    </p>
-                    <div className="mt-4 text-center">
-                      <span className="inline-block bg-primary-500 text-white text-sm px-3 py-1 rounded-full">
-                        Начать →
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link href="/results" className="block">
-                  <div className="card hover:shadow-lg transition-shadow cursor-pointer">
-                    <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl">📊</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Мои результаты
-                    </h3>
-                    <p className="text-gray-600">
-                      Просмотрите свои карты мышления и рекомендации
-                    </p>
-                  </div>
-                </Link>
-              </div>
             </div>
           </AuthCheck>
         )}
