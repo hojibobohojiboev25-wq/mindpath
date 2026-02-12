@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import AuthCheck from '../components/AuthCheck';
 import TelegramLogin from '../components/TelegramLogin';
 
@@ -8,6 +9,7 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     // Check localStorage for auth state
@@ -22,6 +24,13 @@ export default function Home() {
         setUser(authData.user);
         setIsAuthenticated(true);
         console.log('✅ User authenticated:', authData.user);
+
+        // Auto-redirect to dashboard after authentication
+        setTimeout(() => {
+          console.log('🚀 Auto-redirecting to dashboard...');
+          router.push('/dashboard');
+        }, 3000); // Give user time to see the welcome message
+
       } catch (error) {
         console.error('❌ Error parsing stored auth:', error);
         localStorage.removeItem('telegram_auth');
@@ -30,7 +39,7 @@ export default function Home() {
       console.log('ℹ️ No stored auth data found');
     }
     setLoading(false);
-  }, []);
+  }, [router]);
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -87,6 +96,9 @@ export default function Home() {
                 <span className="text-sm text-gray-700">
                   Привет, {user?.firstName || user?.username}!
                 </span>
+                <Link href="/dashboard" className="text-primary-600 hover:text-primary-700 font-medium text-sm">
+                  Личный кабинет
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="btn-secondary text-sm"
@@ -175,20 +187,48 @@ export default function Home() {
         ) : (
           <AuthCheck user={user}>
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Добро пожаловать, {user?.firstName || user?.username}!
-              </h2>
-
-              <div className="text-center mb-8">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                  <p className="text-green-800 font-medium">🎉 Авторизация успешна!</p>
-                  <p className="text-green-700 text-sm mt-1">
-                    Теперь вы можете создать свою персональную карту мышления
-                  </p>
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-8 mb-8 shadow-lg">
+                <div className="flex items-center justify-center mb-6">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-3xl">🎉</span>
+                  </div>
+                </div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                  Добро пожаловать, {user?.firstName || user?.username}!
+                </h1>
+                <p className="text-lg text-gray-700 mb-6">
+                  Ваш аккаунт успешно активирован. Начинаем создание персональной карты мышления...
+                </p>
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                  <span className="text-green-700 font-medium">Загрузка личного кабинета</span>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                      Авторизация проверена
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
+                      Загрузка профиля
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-gray-300 rounded-full mr-2"></div>
+                      Подготовка опроса
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">
+                  Если автоматическое перенаправление не произошло через 5 секунд,
+                  <Link href="/dashboard" className="text-primary-600 hover:text-primary-700 font-medium ml-1">
+                    перейти в личный кабинет →
+                  </Link>
+                </p>
+              </div>
                 <Link href="/questionnaire" className="block">
                   <div className="card hover:shadow-lg transition-shadow cursor-pointer border-2 border-primary-200 hover:border-primary-400">
                     <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
