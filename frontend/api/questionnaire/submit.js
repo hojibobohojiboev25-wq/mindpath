@@ -1,6 +1,11 @@
+const { updateStore } = require('../../lib/runtimeStore');
+
 // Real AI personality analysis with OpenAI
 async function analyzePersonalityWithAI(responses) {
   try {
+    if (!process.env.OPENAI_API_KEY) {
+      return analyzePersonalitySimple(responses);
+    }
     const prompt = createPersonalityAnalysisPrompt(responses);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -10,7 +15,7 @@ async function analyzePersonalityWithAI(responses) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -388,7 +393,7 @@ async function handler(req, res) {
   }
 
   try {
-    const { responses } = req.body;
+    const { responses, profile } = req.body;
 
     // Validate responses
     if (!responses || typeof responses !== 'object') {
@@ -439,6 +444,8 @@ async function handler(req, res) {
 
     const result = {
       id: Date.now(),
+      profileId: profile?.id || 'anonymous',
+      profileName: profile?.name || 'Anonymous',
       personalityAnalysis,
       mindMapData,
       recommendations,
@@ -446,6 +453,19 @@ async function handler(req, res) {
       createdAt: new Date().toISOString(),
       questionnaireDate: new Date().toISOString()
     };
+
+    await updateStore((draft) => {
+      const profileId = result.profileId;
+      if (!draft.analysisResults) {
+        draft.analysisResults = {};
+      }
+      if (!draft.analysisResults[profileId]) {
+        draft.analysisResults[profileId] = [];
+      }
+      draft.analysisResults[profileId].push(result);
+      draft.analysisResults[profileId] = draft.analysisResults[profileId].slice(-20);
+      return draft;
+    });
 
     res.json({
       success: true,

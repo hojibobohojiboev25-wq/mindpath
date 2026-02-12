@@ -35,16 +35,20 @@ export default function QuestionnaireForm({ questions, onComplete }) {
     setError(null);
 
     try {
+      const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
       const response = await fetch('/api/questionnaire/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
-        body: JSON.stringify({ responses }),
+        body: JSON.stringify({ responses, profile }),
       });
 
       if (response.ok) {
+        const data = await response.json();
+        if (data?.result) {
+          localStorage.setItem('latest_analysis_result', JSON.stringify(data.result));
+        }
         onComplete();
       } else {
         const errorData = await response.json();

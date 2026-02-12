@@ -21,6 +21,7 @@ export default function ProfileSetup({ onComplete }) {
   const handleComplete = () => {
     if (avatar) {
       onComplete({
+        id: `profile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         name: name.trim(),
         avatar: avatar,
         createdAt: new Date().toISOString()

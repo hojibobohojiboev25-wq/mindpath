@@ -13,6 +13,7 @@ export default function GlobalChat() {
   const pollIntervalRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
   const userIdRef = useRef(null);
+  const lastTimestampRef = useRef(0);
 
   useEffect(() => {
     // Load user profile
@@ -21,7 +22,7 @@ export default function GlobalChat() {
       try {
         const profileData = JSON.parse(storedProfile);
         setUser(profileData);
-        userIdRef.current = `user_${profileData.name}_${Date.now()}`;
+        userIdRef.current = profileData.id || `user_${profileData.name}`;
 
         // Join chat
         joinChat(profileData);
@@ -121,11 +122,27 @@ export default function GlobalChat() {
 
   const loadMessages = async () => {
     try {
-      const response = await fetch('/api/chat/socket');
+      const sinceQuery = lastTimestampRef.current ? `?since=${lastTimestampRef.current}` : '';
+      const response = await fetch(`/api/chat/socket${sinceQuery}`);
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages || []);
+        const incoming = data.messages || [];
+        if (!incoming.length) {
+          setActiveUsers(data.activeUsers || 0);
+          return;
+        }
+        setMessages((prev) => {
+          const merged = [...prev, ...incoming];
+          const seen = new Set();
+          const unique = merged.filter((m) => {
+            if (seen.has(m.id)) return false;
+            seen.add(m.id);
+            return true;
+          });
+          return unique.slice(-200);
+        });
         setActiveUsers(data.activeUsers || 0);
+        lastTimestampRef.current = new Date(incoming[incoming.length - 1].timestamp).getTime();
       }
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -207,34 +224,34 @@ export default function GlobalChat() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-100">
       <Head>
         <title>Глобальный чат - Карта Мышления</title>
         <meta name="description" content="Общайтесь с людьми со всего мира в реальном времени" />
       </Head>
 
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white/90 backdrop-blur shadow-sm border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
               <Link href="/" className="text-gray-600 hover:text-gray-900">
                 ← На главную
               </Link>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 bg-slate-100 rounded-full px-3 py-1">
                 {user.avatar && (
                   <span className="text-2xl">{user.avatar}</span>
                 )}
-                <span className="font-medium text-gray-900">{user.name}</span>
+                <span className="font-medium text-slate-900">{user.name}</span>
               </div>
             </div>
 
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2 text-sm text-slate-700 bg-emerald-50 px-3 py-1 rounded-full">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <span>{activeUsers} онлайн</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2 text-sm text-slate-700 bg-slate-100 px-3 py-1 rounded-full">
                   <span>{messages.length} сообщений</span>
                 </div>
                 <Link href="/questionnaire" className="btn-secondary text-sm">
@@ -247,9 +264,9 @@ export default function GlobalChat() {
 
       {/* Chat Container */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
           {/* Chat Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
+          <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold">💬 Глобальный чат</h1>
@@ -264,7 +281,7 @@ export default function GlobalChat() {
 
           {/* Messages */}
           <div
-            className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50"
+            className="h-96 overflow-y-auto p-4 space-y-4 bg-slate-50"
           >
             {messages.length === 0 ? (
               <div className="text-center py-12">
@@ -294,25 +311,25 @@ export default function GlobalChat() {
                     </div>
                   )}
 
-                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
                     message.userName === user.name
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white border border-gray-200'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-slate-200'
                   }`}>
                     <div className="flex items-center space-x-2 mb-1">
                       <span className={`text-xs font-medium ${
-                        message.userName === user.name ? 'text-blue-100' : 'text-gray-600'
+                      message.userName === user.name ? 'text-blue-100' : 'text-slate-600'
                       }`}>
                         {message.userName}
                       </span>
                       <span className={`text-xs ${
-                        message.userName === user.name ? 'text-blue-200' : 'text-gray-400'
+                      message.userName === user.name ? 'text-blue-200' : 'text-slate-400'
                       }`}>
                         {formatTime(message.timestamp)}
                       </span>
                     </div>
                     <p className={`text-sm ${
-                      message.userName === user.name ? 'text-white' : 'text-gray-900'
+                      message.userName === user.name ? 'text-white' : 'text-slate-900'
                     }`}>
                       {message.content}
                     </p>
@@ -339,13 +356,13 @@ export default function GlobalChat() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Напишите сообщение..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 maxLength={500}
               />
               <button
                 type="submit"
                 disabled={!newMessage.trim() || isSending}
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 <span>{isSending ? '⏳' : '📤'}</span>
                 <span className="hidden sm:inline">{isSending ? 'Отправка...' : 'Отправить'}</span>

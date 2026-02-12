@@ -19,12 +19,15 @@ export default function Results() {
     try {
       // Load user profile
       const storedProfile = localStorage.getItem('user_profile');
+      let profile = null;
       if (storedProfile) {
-        setUser(JSON.parse(storedProfile));
+        profile = JSON.parse(storedProfile);
+        setUser(profile);
       }
 
       // Load latest results
-      const resultsResponse = await fetch('/api/results/latest');
+      const profileQuery = profile?.id ? `?profileId=${encodeURIComponent(profile.id)}` : '';
+      const resultsResponse = await fetch(`/api/results/latest${profileQuery}`);
 
       if (resultsResponse.ok) {
         const resultsData = await resultsResponse.json();
@@ -53,20 +56,18 @@ export default function Results() {
 
   if (error) {
     return (
-      <AuthCheck user={user}>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="card max-w-md mx-auto text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Ошибка</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={() => router.push('/questionnaire')}
-              className="btn-primary"
-            >
-              Пройти опрос заново
-            </button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="card max-w-md mx-auto text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Ошибка</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => router.push('/questionnaire')}
+            className="btn-primary"
+          >
+            Пройти опрос заново
+          </button>
         </div>
-      </AuthCheck>
+      </div>
     );
   }
 
@@ -163,7 +164,7 @@ export default function Results() {
                   </h2>
                   <div className="text-center">
                     <img
-                      src={`http://localhost:3001${result.mindMapImageUrl}`}
+                      src={result.mindMapImageUrl}
                       alt="Mind Map"
                       className="max-w-full h-auto rounded-lg shadow-md mx-auto"
                     />
@@ -183,7 +184,7 @@ export default function Results() {
                 Ваш анализ находится в процессе. Обычно это занимает 1-2 минуты.
               </p>
               <button
-                onClick={checkAuthAndLoadResults}
+                onClick={loadProfileAndResults}
                 className="btn-primary mr-4"
               >
                 Проверить снова

@@ -1,155 +1,140 @@
-// Real-time chat API with polling (Vercel compatible)
-// In production, this would use a database
-let chatHistory = [
-  {
-    id: '1',
-    userName: 'Система',
-    userAvatar: '🤖',
-    content: 'Добро пожаловать в глобальный чат! Здесь можно общаться в реальном времени.',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    type: 'system'
-  },
-  {
-    id: '2',
-    userName: 'Администратор',
-    userAvatar: '👑',
-    content: 'Привет всем! Общайтесь вежливо и уважительно.',
-    timestamp: new Date(Date.now() - 1800000).toISOString(),
-    type: 'admin'
-  }
-];
+const { getStore, updateStore } = require('../../lib/runtimeStore');
 
-let activeUsers = new Map();
-let lastUpdate = Date.now();
+const MAX_MESSAGES = 500;
+const USER_IDLE_MS = 5 * 60 * 1000;
 
-export default async function handler(req, res) {
+function toActiveUsersMap(usersObject) {
+  return new Map(Object.entries(usersObject || {}));
+}
+
+function toUsersObject(usersMap) {
+  return Object.fromEntries(usersMap.entries());
+}
+
+async function handler(req, res) {
   if (req.method === 'GET') {
-    // Get chat history and active users
     const now = Date.now();
+    const since = Number(req.query.since || 0);
 
-    // Simulate user activity decay (remove inactive users after 5 minutes)
-    for (const [userId, user] of activeUsers.entries()) {
-      if (now - new Date(user.lastSeen).getTime() > 300000) { // 5 minutes
-        activeUsers.delete(userId);
+    const store = await updateStore((draft) => {
+      const users = toActiveUsersMap(draft.chat.users);
+      for (const [userId, user] of users.entries()) {
+        if (now - new Date(user.lastSeen).getTime() > USER_IDLE_MS) {
+          users.delete(userId);
+        }
       }
-    }
+      draft.chat.users = toUsersObject(users);
+      return draft;
+    });
 
-    res.json({
-      messages: chatHistory,
-      activeUsers: activeUsers.size,
-      lastUpdate: lastUpdate
+    const allMessages = store.chat.messages || [];
+    const messages = since
+      ? allMessages.filter((m) => new Date(m.timestamp).getTime() > since)
+      : allMessages.slice(-80);
+
+    return res.json({
+      messages,
+      activeUsers: Object.keys(store.chat.users || {}).length,
+      lastUpdate: now
     });
 
   } else if (req.method === 'POST') {
     const { action, userData, messageData } = req.body;
 
     if (action === 'join') {
-      // User joined chat
-      const user = {
-        id: userData.userId || `user_${Date.now()}`,
-        name: userData.name,
-        avatar: userData.avatar,
-        joinedAt: new Date().toISOString(),
-        lastSeen: new Date().toISOString()
-      };
-      activeUsers.set(user.id, user);
-
-      const joinMessage = {
-        id: Date.now().toString(),
-        userName: userData.name,
-        userAvatar: userData.avatar,
-        content: `${userData.name} присоединился к чату`,
-        timestamp: new Date().toISOString(),
-        type: 'join'
-      };
-
-      chatHistory.push(joinMessage);
-      if (chatHistory.length > 100) {
-        chatHistory.shift();
+      if (!userData?.userId || !userData?.name) {
+        return res.status(400).json({ error: 'Invalid user data' });
       }
-
-      lastUpdate = Date.now();
-      res.json({ success: true, message: joinMessage });
+      const nowIso = new Date().toISOString();
+      await updateStore((draft) => {
+        const users = toActiveUsersMap(draft.chat.users);
+        users.set(userData.userId, {
+          id: userData.userId,
+          name: userData.name,
+          avatar: userData.avatar || '👤',
+          joinedAt: nowIso,
+          lastSeen: nowIso
+        });
+        draft.chat.users = toUsersObject(users);
+        return draft;
+      });
+      return res.json({ success: true });
 
     } else if (action === 'send_message') {
-      // Send message
-      const user = activeUsers.get(messageData.userId);
-      if (!user) {
-        return res.status(400).json({ error: 'User not found' });
+      if (!messageData?.userId || !messageData?.content?.trim()) {
+        return res.status(400).json({ error: 'Invalid message' });
       }
 
-      // Update user activity
-      user.lastSeen = new Date().toISOString();
-      activeUsers.set(user.id, user);
+      let responsePayload = null;
+      const now = Date.now();
+      const nowIso = new Date(now).toISOString();
 
-      // Basic spam protection
-      const recentMessages = chatHistory.filter(msg =>
-        msg.userName === user.name &&
-        msg.type === 'message' &&
-        (Date.now() - new Date(msg.timestamp).getTime()) < 10000 // 10 seconds
-      );
-
-      if (recentMessages.length >= 3) {
-        return res.status(429).json({ error: 'Too many messages. Please wait.' });
-      }
-
-      const message = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        userName: user.name,
-        userAvatar: user.avatar,
-        content: messageData.content.trim(),
-        timestamp: new Date().toISOString(),
-        type: 'message'
-      };
-
-      chatHistory.push(message);
-      if (chatHistory.length > 100) {
-        chatHistory.shift();
-      }
-
-      lastUpdate = Date.now();
-      res.json({ success: true, message });
-
-    } else if (action === 'leave') {
-      // User left chat
-      const user = activeUsers.get(userData.userId);
-      if (user) {
-        activeUsers.delete(userData.userId);
-
-        const leaveMessage = {
-          id: Date.now().toString(),
-          userName: user.name,
-          userAvatar: user.avatar,
-          content: `${user.name} покинул чат`,
-          timestamp: new Date().toISOString(),
-          type: 'leave'
-        };
-
-        chatHistory.push(leaveMessage);
-        if (chatHistory.length > 100) {
-          chatHistory.shift();
+      await updateStore((draft) => {
+        const users = toActiveUsersMap(draft.chat.users);
+        const user = users.get(messageData.userId);
+        if (!user) {
+          responsePayload = { status: 400, body: { error: 'User not found' } };
+          return draft;
         }
 
-        lastUpdate = Date.now();
-        res.json({ success: true, message: leaveMessage });
-      } else {
-        res.json({ success: true });
-      }
+        const recentMessages = (draft.chat.messages || []).filter(
+          (m) =>
+            m.userId === user.id &&
+            m.type === 'message' &&
+            now - new Date(m.timestamp).getTime() < 10000
+        );
+        if (recentMessages.length >= 5) {
+          responsePayload = { status: 429, body: { error: 'Too many messages. Slow down.' } };
+          return draft;
+        }
+
+        users.set(user.id, { ...user, lastSeen: nowIso });
+        draft.chat.users = toUsersObject(users);
+
+        const message = {
+          id: `${now}_${Math.random().toString(36).slice(2, 8)}`,
+          userId: user.id,
+          userName: user.name,
+          userAvatar: user.avatar,
+          content: String(messageData.content).trim().slice(0, 500),
+          timestamp: nowIso,
+          type: 'message'
+        };
+        draft.chat.messages = [...(draft.chat.messages || []), message].slice(-MAX_MESSAGES);
+        responsePayload = { status: 200, body: { success: true, message } };
+        return draft;
+      });
+
+      return res.status(responsePayload.status).json(responsePayload.body);
+
+    } else if (action === 'leave') {
+      await updateStore((draft) => {
+        const users = toActiveUsersMap(draft.chat.users);
+        users.delete(userData?.userId);
+        draft.chat.users = toUsersObject(users);
+        return draft;
+      });
+      return res.json({ success: true });
 
     } else if (action === 'heartbeat') {
-      // Update user activity
-      const user = activeUsers.get(userData.userId);
-      if (user) {
-        user.lastSeen = new Date().toISOString();
-        activeUsers.set(user.id, user);
-      }
-      res.json({ success: true });
+      await updateStore((draft) => {
+        const users = toActiveUsersMap(draft.chat.users);
+        const user = users.get(userData?.userId);
+        if (user) {
+          users.set(user.id, { ...user, lastSeen: new Date().toISOString() });
+          draft.chat.users = toUsersObject(users);
+        }
+        return draft;
+      });
+      return res.json({ success: true });
 
     } else {
-      res.status(400).json({ error: 'Invalid action' });
+      return res.status(400).json({ error: 'Invalid action' });
     }
 
   } else {
-    res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 }
+
+module.exports = handler;
