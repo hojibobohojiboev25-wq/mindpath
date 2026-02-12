@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { adminLogin } from '../../services/api/admin';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -15,25 +16,12 @@ export default function AdminLogin() {
     setError('');
 
     try {
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('admin_token', data.token);
-        router.push('/admin');
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Неверные учетные данные');
-      }
+      const data = await adminLogin(username, password);
+      localStorage.setItem('admin_token', data.token);
+      router.push('/admin');
     } catch (error) {
       console.error('Login error:', error);
-      setError('Ошибка подключения');
+      setError(error?.data?.error || 'Ошибка подключения');
     } finally {
       setLoading(false);
     }

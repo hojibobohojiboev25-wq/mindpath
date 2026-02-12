@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
+import { getAdminUsers, verifyAdminToken } from '../services/api/admin';
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,25 +28,12 @@ export default function AdminPanel() {
     }
 
     try {
-      // Verify token on server
-      const response = await fetch('/api/admin/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.valid) {
-          setIsAuthenticated(true);
-          loadData();
-        } else {
-          throw new Error('Invalid token');
-        }
+      const data = await verifyAdminToken(token);
+      if (data.valid) {
+        setIsAuthenticated(true);
+        loadData();
       } else {
-        throw new Error('Token verification failed');
+        throw new Error('Invalid token');
       }
     } catch (error) {
       console.error('Auth check error:', error);
@@ -56,53 +44,14 @@ export default function AdminPanel() {
 
   const loadData = async () => {
     try {
-      // Load mock data for demo
-      // In production, load real data from database
-      const mockUsers = [
-        {
-          id: '1',
-          name: 'Алексей Петров',
-          avatar: '👨‍💻',
-          lastSeen: new Date(Date.now() - 300000).toISOString(), // 5 min ago
-          messagesCount: 15,
-          analysesCount: 2,
-          status: 'online'
-        },
-        {
-          id: '2',
-          name: 'Мария Иванова',
-          avatar: '👩‍🎨',
-          lastSeen: new Date(Date.now() - 1800000).toISOString(), // 30 min ago
-          messagesCount: 8,
-          analysesCount: 1,
-          status: 'away'
-        },
-        {
-          id: '3',
-          name: 'Дмитрий Сидоров',
-          avatar: '👨‍🚀',
-          lastSeen: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-          messagesCount: 23,
-          analysesCount: 3,
-          status: 'offline'
-        },
-        {
-          id: '4',
-          name: 'Анна Козлова',
-          avatar: '👩‍🔬',
-          lastSeen: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-          messagesCount: 5,
-          analysesCount: 1,
-          status: 'offline'
-        }
-      ];
-
-      setUsers(mockUsers);
-      setStats({
-        totalUsers: mockUsers.length,
-        activeUsers: mockUsers.filter(u => u.status === 'online').length,
-        totalMessages: mockUsers.reduce((sum, u) => sum + u.messagesCount, 0),
-        totalAnalyses: mockUsers.reduce((sum, u) => sum + u.analysesCount, 0)
+      const token = localStorage.getItem('admin_token');
+      const data = await getAdminUsers(token);
+      setUsers(data.users || []);
+      setStats(data.stats || {
+        totalUsers: 0,
+        activeUsers: 0,
+        totalMessages: 0,
+        totalAnalyses: 0
       });
     } catch (error) {
       console.error('Error loading data:', error);

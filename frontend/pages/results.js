@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import MindMapVisualization from '../components/MindMapVisualization';
 import Recommendations from '../components/Recommendations';
 import AppLayout from '../components/AppLayout';
+import { getLatestResult } from '../services/api/analysis';
 
 export default function Results() {
   const [user, setUser] = useState(null);
@@ -26,21 +27,20 @@ export default function Results() {
       }
 
       // Load latest results
-      const profileQuery = profile?.id ? `?profileId=${encodeURIComponent(profile.id)}` : '';
-      const resultsResponse = await fetch(`/api/results/latest${profileQuery}`);
-
-      if (resultsResponse.ok) {
-        const resultsData = await resultsResponse.json();
-        setResult(resultsData.result);
-      } else if (resultsResponse.status === 404) {
-        setError('Результаты анализа не найдены. Сначала пройдите опрос.');
+      if (!profile?.id) {
+        setError('Профиль не найден. Создайте профиль заново.');
       } else {
-        setError('Ошибка загрузки результатов');
+        const resultsData = await getLatestResult(profile.id);
+        setResult(resultsData.result);
       }
 
     } catch (error) {
       console.error('Error loading results:', error);
-      setError('Ошибка сети');
+      if (error?.status === 404) {
+        setError('Результаты анализа не найдены. Сначала пройдите опрос.');
+      } else {
+        setError(error?.data?.error || 'Ошибка сети');
+      }
     } finally {
       setLoading(false);
     }

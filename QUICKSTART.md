@@ -1,42 +1,58 @@
-# 🚀 Быстрый запуск
+# Quickstart (Vercel + Railway + Neon)
 
-## Предварительные требования
-- Node.js 18+
-- Аккаунты: OpenAI, Stability AI (по желанию для полного функционала)
+## 1) Database (Neon)
 
-## 1. Установка зависимостей (frontend)
+- Create a PostgreSQL database.
+- Copy connection URL.
+
+## 2) Backend (Railway)
+
+```bash
+cd backend
+npm install
+npm run prisma:generate
+npm run prisma:dev
+npm run dev
+```
+
+Set backend envs:
+
+```env
+PORT=3001
+HOST=0.0.0.0
+CORS_ORIGIN=http://localhost:3000,https://your-vercel-domain.vercel.app
+DATABASE_URL=postgresql://...
+JWT_SECRET=change-me
+OPENAI_API_KEY=
+STABILITY_API_KEY=
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change-me
+```
+
+## 3) Frontend (Vercel or local)
+
 ```bash
 cd frontend
 npm install
+npm run dev
 ```
 
-## 2. Настройка переменных окружения (frontend/.env.local)
+`frontend/.env.local`:
+
 ```env
-OPENAI_API_KEY=your-openai-key
-STABILITY_API_KEY=your-stability-key
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=change-me
-JWT_SECRET=change-me
-USE_BACKEND_PROXY=false
-BACKEND_URL=
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
-## 3. Запуск (frontend)
-```bash
-cd frontend
-npm run dev   # http://localhost:3000
+For Vercel set:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://your-railway-domain.up.railway.app
 ```
 
-## 4. Использование
+## 4) Verify
 
-1. Откройте http://localhost:3000
-2. Создайте профиль
-3. Откройте чат или заполните анкету
-4. Просмотрите результаты анализа
-
-## 🔧 Troubleshooting
-
-- **Ошибки AI API**: Проверьте ключи в `.env.local`/Vercel
-- **Прокси /api**: не включайте `USE_BACKEND_PROXY`, если нет отдельного бэкенда
-
-Подробная документация в README.md
+- `GET /api/health` on backend should return `status: ok`.
+- Open frontend and create a profile.
+- Send chat message from two tabs (websocket + persistence).
+- Submit questionnaire and wait for status completion.
+- Open `/admin/login` and verify users list loads.

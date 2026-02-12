@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import AppLayout from '../components/AppLayout';
+import { getChatHistory, joinChat, sendChatMessage, markDelivered, markRead } from '../services/api/chat';
+import { getChatSocket, disconnectChatSocket } from '../services/socket/chatSocket';
 
 export default function GlobalChat() {
   const [messages, setMessages] = useState([]);
@@ -11,15 +13,12 @@ export default function GlobalChat() {
   const [isSending, setIsSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
   const messagesEndRef = useRef(null);
-  const pollIntervalRef = useRef(null);
-  const heartbeatIntervalRef = useRef(null);
   const userIdRef = useRef(null);
-  const lastTimestampRef = useRef(0);
+  const knownMessageIdsRef = useRef(new Set());
   const getSafeName = (profile) =>
     profile?.name || profile?.firstName || profile?.username || 'Гость';
 
   useEffect(() => {
-    // Load user profile
     const storedProfile = localStorage.getItem('user_profile');
     if (storedProfile) {
       try {
@@ -31,16 +30,7 @@ export default function GlobalChat() {
         };
         setUser(normalized);
         userIdRef.current = profileData.id || `user_${normalized.name}`;
-
-        // Join chat
-        joinChat(normalized);
-
-        // Start polling for messages
-        startPolling();
-
-        // Start heartbeat
-        startHeartbeat();
-
+        connectToChat(normalized);
       } catch (error) {
         console.error('Error loading profile:', error);
       }
@@ -49,155 +39,120 @@ export default function GlobalChat() {
     setIsLoading(false);
 
     return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
-
-      // Leave chat
-      if (userIdRef.current) {
-        leaveChat();
-      }
+      disconnectChatSocket();
     };
   }, []);
 
-  const joinChat = async (profileData) => {
+  const connectToChat = async (profileData) => {
     try {
-      const response = await fetch('/api/chat/socket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'join',
-          userData: {
-            userId: userIdRef.current,
-            name: getSafeName(profileData),
-            avatar: profileData.avatar || '👤'
-          }
-        }),
+      await joinChat({
+        id: userIdRef.current,
+        name: getSafeName(profileData),
+        avatar: profileData.avatar || '👤'
+      });
+      const history = await getChatHistory(120);
+      const incoming = history.messages || [];
+      const knownIds = new Set();
+      incoming.forEach((m) => knownIds.add(m.id));
+      knownMessageIdsRef.current = knownIds;
+      setMessages(incoming);
+
+      const socket = getChatSocket();
+      socket.emit('chat:join', {
+        id: userIdRef.current,
+        name: getSafeName(profileData),
+        avatar: profileData.avatar || '👤'
       });
 
-      if (response.ok) {
-        loadMessages();
-      }
-    } catch (error) {
-      console.error('Error joining chat:', error);
-    }
-  };
-
-  const leaveChat = async () => {
-    try {
-      await fetch('/api/chat/socket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'leave',
-          userData: {
-            userId: userIdRef.current
-          }
-        }),
-      });
-    } catch (error) {
-      console.error('Error leaving chat:', error);
-    }
-  };
-
-  const startPolling = () => {
-    pollIntervalRef.current = setInterval(loadMessages, 2000);
-  };
-
-  const startHeartbeat = () => {
-    heartbeatIntervalRef.current = setInterval(() => {
-      fetch('/api/chat/socket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'heartbeat',
-          userData: {
-            userId: userIdRef.current
-          }
-        }),
-      }).catch(error => console.error('Heartbeat error:', error));
-    }, 30000);
-  };
-
-  const loadMessages = async () => {
-    try {
-      const sinceQuery = lastTimestampRef.current ? `?since=${lastTimestampRef.current}` : '';
-      const response = await fetch(`/api/chat/socket${sinceQuery}`);
-      if (response.ok) {
-        const data = await response.json();
-        const incoming = data.messages || [];
-        if (!incoming.length) {
-          setActiveUsers(data.activeUsers || 0);
-          return;
-        }
+      socket.on('chat:message', (message) => {
         setMessages((prev) => {
-          const merged = [...prev, ...incoming];
-          const seen = new Set();
-          const unique = merged.filter((m) => {
-            if (seen.has(m.id)) return false;
-            seen.add(m.id);
-            return true;
-          });
-          return unique.slice(-200);
+          if (knownMessageIdsRef.current.has(message.id)) return prev;
+          knownMessageIdsRef.current.add(message.id);
+          const next = [...prev, message].slice(-200);
+          return next;
         });
-        setActiveUsers(data.activeUsers || 0);
-        lastTimestampRef.current = new Date(incoming[incoming.length - 1].timestamp).getTime();
-        setStatusMessage(null);
-      } else {
-        setStatusMessage('Не удалось получить сообщения. Проверьте соединение.');
-      }
+        if (message.profileId !== userIdRef.current) {
+          markDelivered(message.id, userIdRef.current).catch(() => null);
+          markRead(message.id, userIdRef.current).catch(() => null);
+          socket.emit('chat:delivered', { messageId: message.id, profileId: userIdRef.current });
+          socket.emit('chat:read', { messageId: message.id, profileId: userIdRef.current });
+        }
+      });
+
+      socket.on('chat:receipt', (receipt) => {
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === receipt.messageId ? { ...msg, status: receipt.status } : msg))
+        );
+      });
+
+      socket.on('chat:presence', () => {
+        setActiveUsers((prev) => Math.max(1, prev));
+      });
+
+      socket.on('connect_error', () => {
+        setStatusMessage('WebSocket недоступен, работаем через API fallback');
+      });
+
+      setStatusMessage(null);
     } catch (error) {
-      console.error('Error loading messages:', error);
-      setStatusMessage('Ошибка сети при получении сообщений');
+      console.error('Error connecting chat:', error);
+      setStatusMessage('Не удалось подключиться к чату');
+    }
+  };
+
+  const refreshChatFallback = async () => {
+    try {
+      const history = await getChatHistory(120);
+      const incoming = history.messages || [];
+      const knownIds = new Set();
+      incoming.forEach((m) => knownIds.add(m.id));
+      knownMessageIdsRef.current = knownIds;
+      setMessages(incoming.slice(-200));
+      setStatusMessage(null);
+    } catch {
+      setStatusMessage('Не удалось получить сообщения. Проверьте соединение.');
     }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    const id = setInterval(() => {
+      const socket = getChatSocket();
+      if (!socket.connected) {
+        refreshChatFallback();
+      }
+    }, 4000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const uniqueUsers = new Set(messages.map((m) => m.profileId || m.userId).filter(Boolean));
+    if (uniqueUsers.size) {
+      setActiveUsers(uniqueUsers.size);
+    }
   }, [messages]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !user || isSending) return;
-
     setIsSending(true);
-
+    const content = newMessage.trim();
     try {
-      const response = await fetch('/api/chat/socket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'send_message',
-          messageData: {
-            userId: userIdRef.current,
-            userName: getSafeName(user),
-            userAvatar: user.avatar || '👤',
-            content: newMessage.trim()
-          }
-        }),
+      await sendChatMessage({
+        profileId: userIdRef.current,
+        profileName: getSafeName(user),
+        profileAvatar: user.avatar || '👤',
+        content
       });
-
-      if (response.ok) {
-        setNewMessage('');
-        loadMessages();
-        setStatusMessage(null);
+      const socket = getChatSocket();
+      if (socket.connected) {
+        socket.emit('chat:send', { content });
       } else {
-        const errorData = await response.json();
-        setStatusMessage('Ошибка отправки: ' + (errorData.error || 'Попробуйте ещё раз'));
+        await refreshChatFallback();
       }
+      setNewMessage('');
+      setStatusMessage(null);
     } catch (error) {
-      console.error('Error sending message:', error);
-      setStatusMessage('Ошибка подключения');
+      const message = error?.data?.error || error?.message || 'Попробуйте ещё раз';
+      setStatusMessage('Ошибка отправки: ' + message);
     } finally {
       setIsSending(false);
     }
@@ -207,6 +162,10 @@ export default function GlobalChat() {
     e.preventDefault();
     sendMessage();
   };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -340,6 +299,11 @@ export default function GlobalChat() {
                     }`}>
                       {message.content}
                     </p>
+                    {message.userName === user.name && (
+                      <p className="mt-1 text-[10px] uppercase tracking-wide text-blue-200">
+                        {message.status === 'READ' ? 'прочитано' : message.status === 'DELIVERED' ? 'доставлено' : 'отправлено'}
+                      </p>
+                    )}
                   </div>
 
                   {message.userName === user.name && (

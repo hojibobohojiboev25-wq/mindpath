@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import QuestionnaireForm from '../components/QuestionnaireForm';
 import AppLayout from '../components/AppLayout';
+import { getQuestionnaireQuestions } from '../services/api/analysis';
 
 export default function Questionnaire() {
   const [user, setUser] = useState(null);
@@ -23,18 +24,12 @@ export default function Questionnaire() {
       }
 
       // Load questionnaire questions
-      const questionsResponse = await fetch('/api/questionnaire/questions');
-
-      if (questionsResponse.ok) {
-        const questionsData = await questionsResponse.json();
-        setQuestions(questionsData.questions);
-      } else {
-        setError('Не удалось загрузить анкету. Проверьте соединение и попробуйте снова.');
-      }
+      const questionsData = await getQuestionnaireQuestions();
+      setQuestions(questionsData.questions || []);
 
     } catch (error) {
       console.error('Error loading questionnaire:', error);
-      setError('Сервер временно недоступен. Попробуйте еще раз.');
+      setError(error?.data?.error || 'Сервер временно недоступен. Попробуйте еще раз.');
     } finally {
       setLoading(false);
     }

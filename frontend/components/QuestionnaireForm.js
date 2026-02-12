@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getQuestionnaireStatus, submitQuestionnaire } from '../services/api/analysis';
 
 export default function QuestionnaireForm({ questions, onComplete }) {
   const [responses, setResponses] = useState({});
@@ -36,27 +37,32 @@ export default function QuestionnaireForm({ questions, onComplete }) {
 
     try {
       const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
-      const response = await fetch('/api/questionnaire/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ responses, profile }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data?.result) {
-          localStorage.setItem('latest_analysis_result', JSON.stringify(data.result));
+      const data = await submitQuestionnaire({ responses, profile });
+      if (data?.submissionId) {
+        let done = false;
+        for (let i = 0; i < 30; i += 1) {
+          const status = await getQuestionnaireStatus(data.submissionId);
+          if (status.status === 'COMPLETED') {
+            done = true;
+            break;
+          }
+          if (status.status === 'FAILED') {
+            setError('AI анализ завершился с ошибкой, попробуйте снова.');
+            setSubmitting(false);
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 1500));
         }
-        onComplete();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Ошибка при отправке анкеты');
+        if (!done) {
+          setError('Анализ выполняется дольше обычного, попробуйте открыть результаты через минуту.');
+          setSubmitting(false);
+          return;
+        }
       }
+      onComplete();
     } catch (error) {
       console.error('Submit error:', error);
-      setError('Ошибка сети. Попробуйте еще раз.');
+      setError(error?.data?.error || error?.message || 'Ошибка сети. Попробуйте еще раз.');
     } finally {
       setSubmitting(false);
     }

@@ -1,394 +1,114 @@
-# Карта Мышления и Личности 🧠
+# MindPath
 
-Полнофункциональное веб-приложение для создания персональных карт мышления, анализа личности и общения в глобальном чате. Все функции доступны без регистрации!
+Production-ready architecture for personality analysis and realtime chat.
 
-[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?style=flat-square&logo=github)](https://github.com/hojibobohojiboev25-wq/mindpath)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## Architecture
 
-## 🚀 Деплой
+- Frontend: `frontend/` (Next.js) on Vercel
+- Backend: `backend/` (Fastify + Socket.io) on Railway
+- Database: PostgreSQL (Neon) via Prisma ORM
 
-- **Прод:** https://mindpath-amber.vercel.app
-- **Хостинг:** Vercel, root = `frontend`, серверless API в `frontend/pages/api/*`
-- **Node.js:** 18.x (по умолчанию Vercel)
+## Features
 
-**Переменные окружения (Vercel → Project → Settings → Environment Variables):**
-- `OPENAI_API_KEY` — ключ OpenAI (аналитика личности)
-- `STABILITY_API_KEY` — ключ Stability (генерация изображения карты)
-- `ADMIN_USERNAME` / `ADMIN_PASSWORD` — креды админ-панели
-- `JWT_SECRET` — секрет для JWT
-- `USE_BACKEND_PROXY` — оставьте пустым/false, чтобы не проксировать `/api` на localhost
-- `BACKEND_URL` — указывать только если сознательно хотите проксировать `/api` (не требуется на Vercel)
+- Realtime global chat with WebSocket + REST fallback
+- Message persistence with delivery/read receipts
+- Questionnaire submission with async AI processing pipeline
+- Stored analysis results and mind map revisions
+- Admin authentication (JWT + bcrypt) and users analytics endpoint
+- Rate limits, CORS allowlist, origin checks for state-changing requests
 
-## 🔧 Отладка API
+## Project Structure
 
-Если кнопка не отображается, проверьте:
+- `frontend/pages/*` - UI routes
+- `frontend/services/api/*` - unified API client layer
+- `frontend/services/socket/*` - WebSocket client
+- `backend/src/routes/*` - REST endpoints
+- `backend/src/services/*` - domain logic
+- `backend/src/websocket.js` - Socket.io gateway
+- `backend/prisma/schema.prisma` - DB schema
 
-1. **Переменные окружения:**
-   ```bash
-   # В Vercel Dashboard → Settings → Environment Variables
-   OPENAI_API_KEY = ваш-api-ключ-openai
-   STABILITY_API_KEY = ваш-api-ключ-stability-ai
-   ADMIN_USERNAME = ваше-имя-пользователя-админа
-   ADMIN_PASSWORD = ваш-пароль-админа
-   ```
+## Environment Variables
 
-Для проверки работы API откройте в браузере:
-
-- `/api/debug/env` - проверка переменных окружения
-- `/api/chat/messages` - история чата (для отладки)
-- `/api/questionnaire/questions` - вопросы анкеты
-- `/api/admin/login` - вход в админ панель
-- `/admin/login` - страница входа админа
-
-### 🔐 Админ панель
-- **URL:** `/admin/login`
-- **Логин:** admin (или ваш ADMIN_USERNAME)
-- **Пароль:** admin123 (или ваш ADMIN_PASSWORD)
-- **Функции:** просмотр пользователей, статистика, активность
-
-## 🛠 Технологии
-
-### Frontend
-- **Next.js 14** (serverless API)
-- **Tailwind CSS**
-- **Polling API** для чата (Vercel-совместимый)
-- **JWT** для админки
-- **OpenAI / Stability AI** для анализа и карт
-
-### Безопасность
-- **JWT токены** - stateless аутентификация админа
-- **Rate limiting** - защита чата от спама (3 сообщения/10сек)
-- **Input validation** - валидация всех входных данных
-- **HTTPS only** - шифрованное соединение
-- **API keys** - защищены переменными окружения
-- **Spam protection** - автоматическая блокировка спама
-
-## 📝 Как использовать
-
-1. Зайдите: https://mindpath-amber.vercel.app
-2. Создайте профиль (имя + аватар) — без регистрации.
-3. Доступно:
-   - 💬 Глобальный чат (polling, автообновление)
-   - 🧠 Анкета + AI-анализ личности
-   - 🔧 Админ-панель `/admin/login`
-
-### Функции
-- 💬 Глобальный чат (polling, анти-спам)
-- 🧠 AI-анализ личности (OpenAI)
-- 🗺️ Генерация карты мышления (Stability AI, при наличии ключа)
-- 🔧 Админ панель (JWT)
-- 📱 Адаптивный дизайн
-
-## 🛠 Технологии
-
-### Backend
-- **Node.js + Express** - серверная часть
-- **SQLite** - база данных
-- **OpenAI API** - анализ личности
-- **Stability AI API** - генерация изображений карт мышления
-
-### Frontend
-- **Next.js 14.2.15** - React фреймворк (обновлено для безопасности)
-- **React 18** - UI библиотека
-- **Tailwind CSS** - стилизация
-- **D3.js** - интерактивная визуализация
-- **Profile Setup** - локальный профиль без регистрации
-
-## 📋 Предварительные требования
-
-- Node.js 16+
-- npm или yarn
-- Аккаунты и API ключи:
-  - OpenAI API
-  - Stability AI API
-
-## 🚀 Развертывание на Vercel (Frontend)
-
-**Простой способ развернуть только frontend:**
-
-1. **Импортируйте репозиторий** на [Vercel](https://vercel.com)
-2. **В настройках проекта установите:**
-   - **Root Directory**: `frontend`
-   - **Framework Preset**: `Next.js`
-3. **Добавьте переменные окружения:**
-   - `OPENAI_API_KEY`
-   - `STABILITY_API_KEY`
-   - `ADMIN_USERNAME`
-   - `ADMIN_PASSWORD`
-   - `JWT_SECRET`
-
-**Vercel автоматически обнаружит Next.js и развернет приложение!** 🎉
-
----
-
-## 🚀 Быстрый старт
-
-### Клонирование репозитория
-
-```bash
-git clone https://github.com/hojibobohojiboev25-wq/mindpath.git
-cd mindpath
-```
-
-### Установка зависимостей
-
-```bash
-# Установка всех зависимостей
-npm run install:all
-
-# Или по отдельности:
-# Backend
-cd backend && npm install
-
-# Frontend
-cd ../frontend && npm install
-```
-
-## 🔧 Настройка проекта
-
-### 3. Настройка API ключей
-
-Создайте файл `.env` в директории `backend/`:
+### Backend (`backend/.env`)
 
 ```env
-# Server Configuration
 PORT=3001
-FRONTEND_URL=http://localhost:3000
-SESSION_SECRET=your-super-secret-session-key-change-this-in-production
-
-# AI APIs
-OPENAI_API_KEY=your-openai-api-key-here
-STABILITY_API_KEY=your-stability-ai-api-key-here
-
-# Admin
+HOST=0.0.0.0
+CORS_ORIGIN=http://localhost:3000,https://mindpath-amber.vercel.app
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mindpath?schema=public
+JWT_SECRET=change-me
+OPENAI_API_KEY=
+STABILITY_API_KEY=
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-me
-JWT_SECRET=change-me
-
-# Database
-DATABASE_URL=./database.sqlite
 ```
 
-Для фронтенда создайте `.env.local`:
+### Frontend (`frontend/.env.local`)
 
 ```env
-OPENAI_API_KEY=your-openai-api-key-here
-STABILITY_API_KEY=your-stability-ai-api-key-here
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=change-me
-JWT_SECRET=change-me
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
-## 🚀 Запуск приложения
+## Local Run
 
-### Локальный запуск
+### 1) Backend
 
-1. **Запуск бэкенда:**
 ```bash
-cd backend
-npm run dev
-```
-Сервер запустится на http://localhost:3001
-
-2. **Запуск фронтенда:**
-```bash
-cd frontend
-npm run dev
-```
-Приложение будет доступно на http://localhost:3000
-
-### Продакшн сборка
-
-#### Локальный запуск в продакшене:
-
-1. **Сборка фронтенда:**
-```bash
-cd frontend
-npm run build
-npm start
-```
-
-2. **Запуск бэкенда:**
-```bash
-cd backend
-npm start
-```
-
-#### Развертывание на Vercel + VPS:
-
-**Frontend (Vercel):**
-```bash
-# Из корневой папки проекта
-# Установите Vercel CLI если не установлен
-npm install -g vercel
-
-# Войдите в аккаунт
-vercel login
-
-# Разверните только frontend
-vercel --prod --cwd frontend
-
-# Или настройте через dashboard Vercel:
-# 1. Импортируйте репозиторий
-# 2. В настройках проекта укажите:
-#    - Root Directory: frontend
-#    - Build Command: npm run build
-#    - Output Directory: .next (оставьте пустым)
-# 3. Добавьте переменные окружения:
-#    - OPENAI_API_KEY
-#    - STABILITY_API_KEY
-#    - ADMIN_USERNAME
-#    - ADMIN_PASSWORD
-#    - JWT_SECRET
-```
-
-**Backend (Railway/Render/VPS):**
-```bash
-# Разверните backend на Railway.app или Render.com
-# или на VPS с помощью PM2
-
 cd backend
 npm install
-
-# Для Railway/Render - просто подключите GitHub repo
-# Railway автоматически обнаружит server.js
-
-# Для VPS:
-npm install -g pm2
-pm2 start server.js --name "mind-map-backend"
-
-# Для Docker развертывания:
-docker build -t mindpath-backend .
-docker run -p 3001:3001 -d mindpath-backend
+npm run prisma:generate
+npm run prisma:dev
+npm run dev
 ```
 
-### 🔄 Принудительный перезапуск Vercel развертывания:
-
-Если Vercel использует старую версию кода:
-
-1. **В Vercel Dashboard:**
-   - Перейдите в ваш проект
-   - Settings → Git
-   - Нажмите "Redeploy" или создайте новый deployment
-
-2. **Через CLI:**
-```bash
-vercel --prod --cwd frontend --force
-```
-
-3. **Или создайте пустой коммит:**
-```bash
-git commit --allow-empty -m "Trigger Vercel rebuild"
-git push
-```
-
-## 📁 Структура проекта
-
-```
-mind-map-app/
-├── backend/                 # Node.js/Express бэкенд
-│   ├── models/             # Модели базы данных
-│   ├── routes/             # API маршруты
-│   ├── middleware/         # Промежуточное ПО
-│   ├── utils/              # Утилиты и интеграции с AI
-│   ├── public/             # Статические файлы
-│   └── server.js           # Главный серверный файл
-├── frontend/               # Next.js фронтенд
-│   ├── pages/              # Страницы приложения
-│   ├── components/         # React компоненты
-│   ├── lib/                # Библиотеки и утилиты
-│   ├── utils/              # Вспомогательные функции
-│   └── styles/             # Стили
-└── README.md               # Эта документация
-```
-
-## 🔐 Безопасность
-
-- Никогда не храните API ключи в коде
-- Используйте HTTPS в продакшене
-- Регулярно обновляйте зависимости
-- Валидируйте все входные данные
-- Используйте strong сессионные секреты
-
-## 🌐 Развертывание
-
-### На Vercel (рекомендуется для фронтенда)
-
-1. Создайте аккаунт на [Vercel](https://vercel.com)
-2. Подключите GitHub репозиторий
-3. Настройте переменные окружения в Vercel dashboard
-4. Деплойте фронтенд
-
-### На Railway/Render (для бэкенда)
-
-1. Создайте аккаунт на [Railway](https://railway.app) или [Render](https://render.com)
-2. Подключите GitHub репозиторий
-3. Настройте переменные окружения
-4. Деплойте бэкенд
-
-### На VPS
+### 2) Frontend
 
 ```bash
-# Установка PM2 для управления процессами
-npm install -g pm2
-
-# Запуск бэкенда
-cd backend
-pm2 start server.js --name "mind-map-backend"
-
-# Запуск фронтенда
 cd frontend
-pm2 start npm --name "mind-map-frontend" -- start
+npm install
+npm run dev
 ```
 
-## 🔧 API Endpoints
+Open `http://localhost:3000`.
 
-### Chat + Profile
-- `POST /api/chat/socket` - действия чата (join/send/heartbeat/leave)
-- `GET /api/chat/socket` - получение сообщений
+## Deploy
 
-### Questionnaire
-- `GET /api/questionnaire/questions` - Получение вопросов анкеты
-- `POST /api/questionnaire/submit` - Отправка ответов
+### Backend (Railway)
 
-### Results
-- `GET /api/results/latest` - Последние результаты анализа
-- `GET /api/results/all` - Все результаты пользователя
-- `GET /api/results/:id` - Конкретный результат
+1. Create Railway service from `backend/`.
+2. Add environment variables from section above.
+3. Run `npm run prisma:migrate` on deploy.
 
-## 🐛 Troubleshooting
+### Database (Neon)
 
-### Проблемы со входом в админку
-- Проверьте `ADMIN_USERNAME` и `ADMIN_PASSWORD`
-- Проверьте `JWT_SECRET`
-- Проверьте `/api/admin/login` и `/api/admin/verify`
+1. Create PostgreSQL database.
+2. Copy connection string to `DATABASE_URL`.
 
-### Проблемы с AI API
-- Проверьте баланс аккаунтов
-- Убедитесь в корректности API ключей
-- Проверьте лимиты запросов
+### Frontend (Vercel)
 
-### Проблемы с базой данных
-- Убедитесь, что файл database.sqlite доступен для записи
-- Проверьте права доступа к директории
+1. Set Root Directory to `frontend`.
+2. Add `NEXT_PUBLIC_API_BASE_URL=https://<your-railway-backend-domain>`.
+3. Deploy.
 
-## 📈 Дальнейшее развитие
+## API Endpoints
 
-- [ ] Добавление тестов
-- [ ] Кеширование результатов
-- [ ] Экспорт результатов в PDF
-- [ ] Социальные функции
-- [ ] Многоязычная поддержка
-- [ ] Темная тема интерфейса
+- `GET /api/health`
+- `GET /api/chat/history`
+- `POST /api/chat/join`
+- `POST /api/chat/messages`
+- `POST /api/chat/receipts/delivered`
+- `POST /api/chat/receipts/read`
+- `GET /api/questionnaire/questions`
+- `POST /api/questionnaire/submit`
+- `GET /api/questionnaire/status/:submissionId`
+- `GET /api/results/latest?profileId=<id>`
+- `PATCH /api/mind-map/:analysisResultId`
+- `POST /api/admin/login`
+- `POST /api/admin/verify`
+- `GET /api/admin/users`
 
-## 📄 Лицензия
+## Testing & CI
 
-MIT License - см. файл LICENSE для подробностей.
-
-## 👥 Contributing
-
-Приветствуются pull requests и issues!
-
-## 📞 Контакты
-
-Если у вас есть вопросы или предложения, создайте issue в репозитории.
+- Backend test: `cd backend && npm test`
+- Frontend build check: `cd frontend && npm run build`
+- CI workflow: `.github/workflows/ci.yml` (backend tests + frontend build)

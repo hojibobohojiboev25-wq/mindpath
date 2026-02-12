@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id              String                  @id
+  name            String
+  avatar          String?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  lastSeenAt      DateTime?
+  chatMessages    ChatMessage[]
+  chatReceipts    ChatReceipt[]
+  submissions     QuestionnaireSubmission[]
+  analysisResults AnalysisResult[]
+}
+
+model ChatMessage {
+  id        String        @id @default(cuid())
+  profileId String
+  content   String
+  status    MessageStatus @default(SENT)
+  createdAt DateTime      @default(now())
+  profile   Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  receipts  ChatReceipt[]
+
+  @@index([createdAt])
+}
+
+model ChatReceipt {
+  id          String          @id @default(cuid())
+  messageId   String
+  profileId   String
+  deliveredAt DateTime?
+  readAt      DateTime?
+  message     ChatMessage     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  profile     Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, profileId])
+}
+
+model QuestionnaireSubmission {
+  id         String   @id @default(cuid())
+  profileId  String
+  responses  Json
+  status     JobStatus @default(SUBMITTED)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model AnalysisResult {
+  id                  String   @id @default(cuid())
+  profileId           String
+  submissionId        String?
+  personalityAnalysis Json
+  recommendations     Json
+  mindMapData         Json?
+  mindMapImageUrl     String?
+  status              JobStatus @default(COMPLETED)
+  progress            Int       @default(100)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  profile             Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  mindMapRevisions    MindMapRevision[]
+
+  @@index([profileId, createdAt])
+}
+
+model MindMapRevision {
+  id               String   @id @default(cuid())
+  analysisResultId String
+  data             Json
+  createdAt        DateTime @default(now())
+  analysisResult   AnalysisResult @relation(fields: [analysisResultId], references: [id], onDelete: Cascade)
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum JobStatus {
+  SUBMITTED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
