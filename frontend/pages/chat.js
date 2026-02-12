@@ -9,6 +9,7 @@ export default function GlobalChat() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeUsers, setActiveUsers] = useState(0);
   const [isSending, setIsSending] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
   const messagesEndRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
@@ -150,9 +151,13 @@ export default function GlobalChat() {
         });
         setActiveUsers(data.activeUsers || 0);
         lastTimestampRef.current = new Date(incoming[incoming.length - 1].timestamp).getTime();
+        setStatusMessage(null);
+      } else {
+        setStatusMessage('Не удалось получить сообщения. Проверьте соединение.');
       }
     } catch (error) {
       console.error('Error loading messages:', error);
+      setStatusMessage('Ошибка сети при получении сообщений');
     }
   };
 
@@ -185,13 +190,14 @@ export default function GlobalChat() {
       if (response.ok) {
         setNewMessage('');
         loadMessages();
+        setStatusMessage(null);
       } else {
         const errorData = await response.json();
-        alert('Ошибка отправки: ' + errorData.error);
+        setStatusMessage('Ошибка отправки: ' + (errorData.error || 'Попробуйте ещё раз'));
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Ошибка подключения');
+      setStatusMessage('Ошибка подключения');
     } finally {
       setIsSending(false);
     }
@@ -279,6 +285,11 @@ export default function GlobalChat() {
           <div
             className="h-96 overflow-y-auto p-4 space-y-4 bg-slate-50"
           >
+            {statusMessage && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 text-sm">
+                {statusMessage}
+              </div>
+            )}
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

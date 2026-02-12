@@ -1,46 +1,30 @@
 # 🚀 Быстрый запуск
 
 ## Предварительные требования
-- Node.js 16+
-- Аккаунты: OpenAI, Stability AI
+- Node.js 18+
+- Аккаунты: OpenAI, Stability AI (по желанию для полного функционала)
 
-## 1. Установка зависимостей
+## 1. Установка зависимостей (frontend)
 ```bash
-npm run install:all
+cd frontend
+npm install
 ```
 
-## 2. Настройка переменных окружения
-
-### backend/.env
-```env
-PORT=3001
-FRONTEND_URL=http://localhost:3000
-SESSION_SECRET=your-secret-key
-OPENAI_API_KEY=your-openai-key
-STABILITY_API_KEY=your-stability-key
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=change-me
-JWT_SECRET=change-me
-DATABASE_URL=./database.sqlite
-```
-
-### frontend/.env.local
+## 2. Настройка переменных окружения (frontend/.env.local)
 ```env
 OPENAI_API_KEY=your-openai-key
 STABILITY_API_KEY=your-stability-key
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-me
 JWT_SECRET=change-me
+USE_BACKEND_PROXY=false
+BACKEND_URL=
 ```
 
-## 3. Запуск
+## 3. Запуск (frontend)
 ```bash
-# Одновременный запуск фронтенда и бэкенда
-npm run dev
-
-# Или по отдельности:
-npm run dev:backend    # http://localhost:3001
-npm run dev:frontend   # http://localhost:3000
+cd frontend
+npm run dev   # http://localhost:3000
 ```
 
 ## 4. Использование
@@ -52,7 +36,7 @@ npm run dev:frontend   # http://localhost:3000
 
 ## 🔧 Troubleshooting
 
-- **Ошибки AI API**: Проверьте ключи и баланс аккаунтов
-- **База данных**: Убедитесь в правах доступа к файлу database.sqlite
+- **Ошибки AI API**: Проверьте ключи в `.env.local`/Vercel
+- **Прокси /api**: не включайте `USE_BACKEND_PROXY`, если нет отдельного бэкенда
 
 Подробная документация в README.md

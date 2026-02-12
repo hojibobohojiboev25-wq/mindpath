@@ -49,7 +49,8 @@ function readStoreSync() {
         ...(parsed.chat || {})
       }
     };
-  } catch {
+  } catch (err) {
+    console.error('[runtimeStore] Corrupted store file, resetting. Reason:', err?.message);
     fs.writeFileSync(STORE_FILE, JSON.stringify(DEFAULT_STORE, null, 2), 'utf8');
     return { ...DEFAULT_STORE };
   }
@@ -57,7 +58,16 @@ function readStoreSync() {
 
 function writeStoreSync(store) {
   ensureStore();
-  fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), 'utf8');
+  try {
+    // Prevent runaway file growth; keep only latest 1000 messages.
+    if (store?.chat?.messages?.length > 1000) {
+      store.chat.messages = store.chat.messages.slice(-1000);
+    }
+    fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[runtimeStore] Failed to write store:', err?.message);
+    throw err;
+  }
 }
 
 function getStore() {
@@ -66,7 +76,10 @@ function getStore() {
 
 function updateStore(mutator) {
   updateQueue = updateQueue
-    .catch(() => null)
+    .catch((err) => {
+      console.error('[runtimeStore] Previous update failed:', err?.message);
+      return null;
+    })
     .then(async () => {
       const store = readStoreSync();
       const next = mutator(store) || store;
