@@ -19,13 +19,56 @@
 Success! Domain mindpath-amber.vercel.app is set for bot TrixGo_bot
 ```
 
-### 3. Проверка переменных в Vercel
+### 3. Настройка переменных в Vercel
 
-Убедитесь, что в Vercel установлены:
+#### Как добавить переменные окружения:
+
+1. **Зайдите в Vercel Dashboard**: https://vercel.com/dashboard
+2. **Выберите проект** `mindpath` (или `mindpath-amber`)
+3. **Перейдите в Settings** (шестеренка)
+4. **Environment Variables** в левом меню
+5. **Add New** для каждой переменной:
+
+#### Обязательные переменные:
 
 ```
-NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot
-TELEGRAM_BOT_TOKEN = 8199802315:AAFPCK-0692KRuZLAYjM4SCISaq7VCFpQhU
+Name: NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+Value: TrixGo_bot
+Environment: Production, Preview, Development
+```
+
+```
+Name: TELEGRAM_BOT_TOKEN
+Value: 8199802315:AAFPCK-0692KRuZLAYjM4SCISaq7VCFpQhU
+Environment: Production, Preview, Development
+```
+
+```
+Name: OPENAI_API_KEY
+Value: ваш-openai-api-ключ
+Environment: Production, Preview, Development
+```
+
+```
+Name: STABILITY_API_KEY
+Value: ваш-stability-api-ключ
+Environment: Production, Preview, Development
+```
+
+#### Проверка настроек:
+
+После добавления переменных, откройте: `/api/debug/env` для проверки.
+
+Пример ответа:
+```json
+{
+  "variables": {
+    "NEXT_PUBLIC_TELEGRAM_BOT_USERNAME": "TrixGo_bot",
+    "TELEGRAM_BOT_TOKEN_SET": "YES",
+    "OPENAI_API_KEY_SET": "YES",
+    "STABILITY_API_KEY_SET": "YES"
+  }
+}
 ```
 
 ### 4. Тестирование виджета

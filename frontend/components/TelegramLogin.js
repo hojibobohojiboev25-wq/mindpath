@@ -89,8 +89,32 @@ export default function TelegramLogin({ onLogin }) {
       <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <p className="text-yellow-800 font-medium">Конфигурация бота не завершена</p>
         <p className="text-yellow-600 text-sm mt-1">
-          Проверьте переменную окружения NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+          Переменная окружения NEXT_PUBLIC_TELEGRAM_BOT_USERNAME не установлена
         </p>
+        <div className="mt-3 text-left bg-gray-100 p-2 rounded text-xs font-mono">
+          <p><strong>Что нужно сделать:</strong></p>
+          <ol className="list-decimal list-inside mt-1 space-y-1">
+            <li>Зайти в Vercel Dashboard</li>
+            <li>Выбрать проект mindpath</li>
+            <li>Settings → Environment Variables</li>
+            <li>Добавить: <code>NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot</code></li>
+            <li>Пересобрать проект</li>
+          </ol>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+          >
+            Проверить снова
+          </button>
+          <button
+            onClick={() => window.open('/api/debug/env', '_blank')}
+            className="px-4 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+          >
+            Проверить настройки
+          </button>
+        </div>
       </div>
     );
   }
