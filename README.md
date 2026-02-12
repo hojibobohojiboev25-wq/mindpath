@@ -43,6 +43,18 @@
 2. **Проверка настроек:**
    Откройте `/api/debug/env` в браузере для проверки переменных окружения.
 
+   **Пример ответа:**
+   ```json
+   {
+     "variables": {
+       "NEXT_PUBLIC_TELEGRAM_BOT_USERNAME": "TrixGo_bot",
+       "TELEGRAM_BOT_TOKEN_SET": "YES",
+       "OPENAI_API_KEY_SET": "YES",
+       "STABILITY_API_KEY_SET": "YES"
+     }
+   }
+   ```
+
 3. **Домен бота в BotFather:**
    ```bash
    /setdomain
