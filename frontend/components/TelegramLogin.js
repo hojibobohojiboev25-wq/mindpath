@@ -66,7 +66,12 @@ export default function TelegramLogin({ onLogin }) {
               })
               .then(response => response.json())
               .then(data => {
-                if (data.success) {
+                if (data.success && data.user) {
+                  // Store auth data and reload to show authenticated state
+                  localStorage.setItem('telegram_auth', JSON.stringify({
+                    user: data.user,
+                    timestamp: Date.now()
+                  }));
                   window.location.reload();
                 } else {
                   alert('Ошибка авторизации');

@@ -10,30 +10,29 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
+    // Check localStorage for auth state
+    const storedAuth = localStorage.getItem('telegram_auth');
+    if (storedAuth) {
+      try {
+        const authData = JSON.parse(storedAuth);
+        setUser(authData.user);
         setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Error parsing stored auth:', error);
+        localStorage.removeItem('telegram_auth');
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+    setLoading(false);
+  }, []);
 
   const handleLogin = (userData) => {
     setUser(userData);
     setIsAuthenticated(true);
+    // Store auth data in localStorage
+    localStorage.setItem('telegram_auth', JSON.stringify({
+      user: userData,
+      timestamp: Date.now()
+    }));
   };
 
   const handleLogout = async () => {
@@ -42,13 +41,12 @@ export default function Home() {
         method: 'POST',
         credentials: 'include'
       });
-      setUser(null);
-      setIsAuthenticated(false);
-      // Clear any stored auth data
-      localStorage.removeItem('telegram_auth');
     } catch (error) {
       console.error('Logout failed:', error);
     }
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('telegram_auth');
   };
 
   if (loading) {
