@@ -4,10 +4,18 @@ import crypto from 'crypto';
 function verifyTelegramAuth(data) {
   const { hash, ...authData } = data;
 
-  // Sort auth data by key
-  const dataString = Object.keys(authData)
+  // Filter out undefined/null values and sort auth data by key
+  const filteredData = Object.keys(authData)
+    .filter(key => authData[key] !== undefined && authData[key] !== null)
     .sort()
-    .map(key => `${key}=${authData[key]}`)
+    .reduce((obj, key) => {
+      obj[key] = authData[key];
+      return obj;
+    }, {});
+
+  // Create data string for verification
+  const dataString = Object.keys(filteredData)
+    .map(key => `${key}=${filteredData[key]}`)
     .join('\n');
 
   // Create secret key from bot token
@@ -31,8 +39,24 @@ export default async function handler(req, res) {
   try {
     const authData = req.body;
 
+    console.log('Received Telegram auth data:', {
+      id: authData.id,
+      username: authData.username,
+      first_name: authData.first_name,
+      last_name: authData.last_name,
+      hasPhoto: !!authData.photo_url,
+      auth_date: authData.auth_date
+    });
+
+    // Check if bot token is configured
+    if (!process.env.TELEGRAM_BOT_TOKEN) {
+      console.error('TELEGRAM_BOT_TOKEN not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
     // Verify auth data
     if (!verifyTelegramAuth(authData)) {
+      console.error('Telegram auth verification failed');
       return res.status(401).json({ error: 'Invalid authentication data' });
     }
 
@@ -45,14 +69,14 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Authentication data expired' });
     }
 
-    // Mock user creation (in production, save to database)
+    // Create user object with proper fallbacks
     const user = {
       id: authData.id,
       telegram_id: authData.id,
-      username: authData.username,
-      firstName: authData.first_name,
-      lastName: authData.last_name,
-      avatarUrl: authData.photo_url
+      username: authData.username || `user_${authData.id}`, // Fallback if no username
+      firstName: authData.first_name || 'Пользователь',
+      lastName: authData.last_name || '',
+      avatarUrl: authData.photo_url || null
     };
 
     res.json({
