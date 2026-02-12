@@ -19,20 +19,36 @@ export default function AdminPanel() {
     checkAuth();
   }, []);
 
-  const checkAuth = () => {
+  const checkAuth = async () => {
     const token = localStorage.getItem('admin_token');
     if (!token) {
       router.push('/admin/login');
       return;
     }
 
-    // Verify token (in production, verify on server)
     try {
-      // For demo purposes, just check if token exists
-      // In production, make API call to verify token
-      setIsAuthenticated(true);
-      loadData();
+      // Verify token on server
+      const response = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.valid) {
+          setIsAuthenticated(true);
+          loadData();
+        } else {
+          throw new Error('Invalid token');
+        }
+      } else {
+        throw new Error('Token verification failed');
+      }
     } catch (error) {
+      console.error('Auth check error:', error);
       localStorage.removeItem('admin_token');
       router.push('/admin/login');
     }

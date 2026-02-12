@@ -43,80 +43,136 @@ async function analyzePersonalityWithAI(responses) {
 
 // Create prompt for personality analysis
 function createPersonalityAnalysisPrompt(responses) {
-  let prompt = 'Проанализируйте личность человека на основе следующих ответов на вопросы:\n\n';
+  let prompt = `Ты - профессиональный психолог и эксперт по психологии личности. Проанализируй личность человека на основе его ответов на психологический тест. Будь максимально точен, глубок и полезен в своем анализе.
 
-  // Format responses for the prompt
+ИНСТРУКЦИИ ДЛЯ АНАЛИЗА:
+- Используй современные психологические концепции (Большая пятерка, Майерс-Бриггс, когнитивные стили)
+- Будь объективен и основывайся только на предоставленных данных
+- Структура анализа должна быть академической и профессиональной
+- Избегай клише и общих фраз
+- Дай конкретные, практические рекомендации
+
+ОТВЕТЫ ЧЕЛОВЕКА:\n\n`;
+
+  // Format responses with proper psychological context
   Object.entries(responses).forEach(([key, value]) => {
     let questionText = '';
-    let answerText = '';
+    let psychologicalDomain = '';
+    let answerText = Array.isArray(value) ? value.join(', ') : value;
 
     switch (key) {
       case 'goals':
         questionText = 'Жизненные цели';
-        answerText = value;
+        psychologicalDomain = '(Показывает ценности, мотивацию и временную перспективу)';
         break;
       case 'strengths':
         questionText = 'Сильные стороны и таланты';
-        answerText = value;
+        psychologicalDomain = '(Раскрывает ключевые преимущества и потенциал)';
         break;
       case 'challenges':
         questionText = 'Основные вызовы';
-        answerText = value;
+        psychologicalDomain = '(Указывает на зоны роста и препятствия)';
         break;
       case 'values':
         questionText = 'Важные ценности';
-        answerText = Array.isArray(value) ? value.join(', ') : value;
+        psychologicalDomain = '(Определяет систему приоритетов и мировоззрение)';
         break;
       case 'personality':
         questionText = 'Черты характера';
-        answerText = Array.isArray(value) ? value.join(', ') : value;
+        psychologicalDomain = '(Характеризует базовые паттерны поведения)';
         break;
       case 'work_style':
         questionText = 'Предпочитаемый стиль работы';
-        answerText = value;
+        psychologicalDomain = '(Показывает мотивацию и рабочие предпочтения)';
         break;
       case 'learning_style':
         questionText = 'Стиль обучения';
-        answerText = value;
+        psychologicalDomain = '(Раскрывает когнитивные предпочтения)';
         break;
       case 'decision_making':
         questionText = 'Стиль принятия решений';
-        answerText = value;
+        psychologicalDomain = '(Характеризует рациональность и интуицию)';
         break;
       case 'stress_handling':
         questionText = 'Способы coping со стрессом';
-        answerText = Array.isArray(value) ? value.join(', ') : value;
+        psychologicalDomain = '(Указывает на механизмы адаптации и resilience)';
         break;
       case 'future_vision':
         questionText = 'Видение себя через 5 лет';
-        answerText = value;
+        psychologicalDomain = '(Показывает амбиции и целеполагание)';
         break;
     }
 
-    prompt += `${questionText}: ${answerText}\n`;
+    prompt += `ВОПРОС: ${questionText}\n`;
+    if (psychologicalDomain) prompt += `${psychologicalDomain}\n`;
+    prompt += `ОТВЕТ: ${answerText}\n\n`;
   });
 
-  prompt += '\nПожалуйста, предоставьте анализ личности в следующем формате:\n';
-  prompt += '1. Основные черты характера\n';
-  prompt += '2. Сильные стороны\n';
-  prompt += '3. Области для развития\n';
-  prompt += '4. Карьерные рекомендации\n';
-  prompt += '5. Рекомендации по саморазвитию\n';
+  prompt += `СТРУКТУРА АНАЛИЗА (обязательно следуй этой структуре):
+
+🔍 ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ:
+- Доминирующие черты личности (по Большой пятерке)
+- Когнитивный стиль мышления
+- Эмоциональный темперамент
+- Социальный стиль взаимодействия
+
+💪 СИЛЬНЫЕ СТОРОНЫ:
+- Ключевые преимущества и таланты
+- Адаптивные стратегии поведения
+- Ресурсы для преодоления трудностей
+
+🎯 ОБЛАСТИ РАЗВИТИЯ:
+- Потенциальные "слепые зоны"
+- Ограничения текущих стратегий
+- Рекомендации по самосовершенствованию
+
+🚀 КАРЬЕРНЫЕ РЕКОМЕНДАЦИИ:
+- Подходящие профессиональные сферы
+- Идеальные роли и позиции
+- Рабочая среда для максимальной эффективности
+
+💡 ПРАКТИЧЕСКИЕ СОВЕТЫ:
+- Конкретные действия по развитию
+- Стратегии улучшения качества жизни
+- Методы достижения личных целей
+
+⚡ КОРОТКИЕ ИНСАЙТЫ:
+- 3 главных открытия о себе
+- Ключевые принципы для применения в жизни
+
+Анализ должен быть глубоким, научно-обоснованным и практически полезным. Избегай общих фраз. Будь максимально конкретен и полезен.`;
 
   return prompt;
 }
 
 // Parse the AI response into structured data
 function parsePersonalityAnalysis(analysisText) {
-  // Simple parser - in production you might want more sophisticated parsing
-  const sections = analysisText.split(/\d+\./);
+  // Extract sections based on emoji markers
+  const sections = {
+    traits: extractSectionByEmoji(analysisText, '🔍'),
+    strengths: extractSectionByEmoji(analysisText, '💪'),
+    development_areas: extractSectionByEmoji(analysisText, '🎯'),
+    career_recommendations: extractSectionByEmoji(analysisText, '🚀'),
+    self_development: extractSectionByEmoji(analysisText, '💡'),
+    insights: extractSectionByEmoji(analysisText, '⚡')
+  };
+
+  // Fallback parsing if emoji extraction fails
+  if (!sections.traits || sections.traits.length < 50) {
+    const fallbackSections = analysisText.split(/\d+\.|•|-/);
+    sections.traits = extractSection(fallbackSections, 1) || sections.traits || 'Не удалось определить психологический профиль';
+    sections.strengths = extractSection(fallbackSections, 2) || sections.strengths || 'Не удалось определить сильные стороны';
+    sections.development_areas = extractSection(fallbackSections, 3) || sections.development_areas || 'Не удалось определить области развития';
+    sections.career_recommendations = extractSection(fallbackSections, 4) || sections.career_recommendations || 'Не удалось определить карьерные рекомендации';
+    sections.self_development = extractSection(fallbackSections, 5) || sections.self_development || 'Не удалось определить практические советы';
+  }
 
   return {
-    traits: extractSection(sections, 1) || 'Не удалось определить основные черты',
-    strengths: extractSection(sections, 2) || 'Не удалось определить сильные стороны',
-    development_areas: extractSection(sections, 3) || 'Не удалось определить области для развития',
-    career_recommendations: extractSection(sections, 4) || 'Не удалось определить карьерные рекомендации',
-    self_development: extractSection(sections, 5) || 'Не удалось определить рекомендации по саморазвитию',
+    traits: sections.traits,
+    strengths: sections.strengths,
+    development_areas: sections.development_areas,
+    career_recommendations: sections.career_recommendations,
+    self_development: sections.self_development + (sections.insights ? '\n\n' + sections.insights : ''),
     raw_analysis: analysisText
   };
 }
@@ -126,6 +182,25 @@ function extractSection(sections, index) {
     return sections[index].trim();
   }
   return null;
+}
+
+function extractSectionByEmoji(text, emoji) {
+  const emojiIndex = text.indexOf(emoji);
+  if (emojiIndex === -1) return null;
+
+  // Find the next emoji or end of text
+  const nextEmojiMatch = text.slice(emojiIndex + emoji.length).match(/^[🔍💪🎯🚀💡⚡]/);
+  const endIndex = nextEmojiMatch
+    ? emojiIndex + emoji.length + nextEmojiMatch.index
+    : text.length;
+
+  const section = text.slice(emojiIndex + emoji.length, endIndex).trim();
+
+  // Clean up the section
+  return section
+    .replace(/^[:\s]+/, '') // Remove leading colons and spaces
+    .replace(/\n+/g, '\n') // Normalize line breaks
+    .trim();
 }
 
 // Fallback simple analysis

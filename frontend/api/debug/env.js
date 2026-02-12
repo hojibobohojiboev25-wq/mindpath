@@ -5,17 +5,30 @@ async function handler(req, res) {
 
 // Return safe environment variables for debugging
 const safeEnv = {
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'NOT_SET',
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME_TYPE: typeof process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME,
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME_VALUE: `"${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}"`,
-  TELEGRAM_BOT_TOKEN_SET: process.env.TELEGRAM_BOT_TOKEN ? 'YES' : 'NO',
-  TELEGRAM_BOT_TOKEN_PREFIX: process.env.TELEGRAM_BOT_TOKEN ? process.env.TELEGRAM_BOT_TOKEN.substring(0, 10) + '...' : 'NOT_SET',
+  // AI APIs
   OPENAI_API_KEY_SET: process.env.OPENAI_API_KEY ? 'YES' : 'NO',
+  OPENAI_API_KEY_PREFIX: process.env.OPENAI_API_KEY ? 'sk-' + process.env.OPENAI_API_KEY.substring(3, 10) + '...' : 'NOT_SET',
   STABILITY_API_KEY_SET: process.env.STABILITY_API_KEY ? 'YES' : 'NO',
+  STABILITY_API_KEY_PREFIX: process.env.STABILITY_API_KEY ? 'sk-' + process.env.STABILITY_API_KEY.substring(3, 10) + '...' : 'NOT_SET',
+
+  // Admin credentials
+  ADMIN_USERNAME_SET: process.env.ADMIN_USERNAME ? 'YES' : 'NO',
+  ADMIN_PASSWORD_SET: process.env.ADMIN_PASSWORD ? 'YES' : 'NO',
+  JWT_SECRET_SET: process.env.JWT_SECRET ? 'YES' : 'NO',
+
+  // Environment info
   NODE_ENV: process.env.NODE_ENV,
   VERCEL_ENV: process.env.VERCEL_ENV,
   VERCEL_URL: process.env.VERCEL_URL,
-  ALL_ENV_KEYS: Object.keys(process.env).filter(key => key.includes('TELEGRAM') || key.includes('NEXT_PUBLIC') || key.includes('VERCEL'))
+
+  // All relevant env keys
+  ALL_ENV_KEYS: Object.keys(process.env).filter(key =>
+    key.includes('OPENAI') ||
+    key.includes('STABILITY') ||
+    key.includes('ADMIN') ||
+    key.includes('JWT') ||
+    key.includes('VERCEL')
+  )
 };
 
   res.json({

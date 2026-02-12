@@ -1,9 +1,6 @@
-// Socket.IO server for real-time chat
-import { Server } from 'socket.io';
-
-let io;
-
-const chatHistory = [
+// Real-time chat API with polling (Vercel compatible)
+// In production, this would use a database
+let chatHistory = [
   {
     id: '1',
     userName: 'Система',
@@ -22,130 +19,138 @@ const chatHistory = [
   }
 ];
 
-const activeUsers = new Map();
+let activeUsers = new Map();
+let lastUpdate = Date.now();
 
-export default function handler(req, res) {
-  if (!res.socket.server.io) {
-    console.log('*First use, starting Socket.IO server...');
+export default async function handler(req, res) {
+  if (req.method === 'GET') {
+    // Get chat history and active users
+    const now = Date.now();
+    const timeDiff = now - lastUpdate;
 
-    io = new Server(res.socket.server, {
-      path: '/api/chat/socket',
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+    // Simulate user activity decay (remove inactive users after 5 minutes)
+    for (const [userId, user] of activeUsers.entries()) {
+      if (now - new Date(user.lastSeen).getTime() > 300000) { // 5 minutes
+        activeUsers.delete(userId);
       }
+    }
+
+    res.json({
+      messages: chatHistory,
+      activeUsers: activeUsers.size,
+      lastUpdate: lastUpdate
     });
 
-    io.on('connection', (socket) => {
-      console.log('User connected:', socket.id);
+  } else if (req.method === 'POST') {
+    const { action, userData, messageData } = req.body;
 
-      // Send chat history to new user
-      socket.emit('chat_history', chatHistory);
+    if (action === 'join') {
+      // User joined chat
+      const user = {
+        id: userData.userId || `user_${Date.now()}`,
+        name: userData.name,
+        avatar: userData.avatar,
+        joinedAt: new Date().toISOString(),
+        lastSeen: new Date().toISOString()
+      };
+      activeUsers.set(user.id, user);
 
-      // Send current active users count
-      socket.emit('active_users', activeUsers.size + 1);
+      const joinMessage = {
+        id: Date.now().toString(),
+        userName: userData.name,
+        userAvatar: userData.avatar,
+        content: `${userData.name} присоединился к чату`,
+        timestamp: new Date().toISOString(),
+        type: 'join'
+      };
 
-      socket.on('join_chat', (userData) => {
-        const user = {
-          id: socket.id,
-          name: userData.name,
-          avatar: userData.avatar,
-          joinedAt: new Date().toISOString()
-        };
-        activeUsers.set(socket.id, user);
+      chatHistory.push(joinMessage);
+      if (chatHistory.length > 100) {
+        chatHistory.shift();
+      }
 
-        // Broadcast updated user count
-        io.emit('active_users', activeUsers.size);
+      lastUpdate = Date.now();
+      res.json({ success: true, message: joinMessage });
 
-        // Broadcast join message
-        const joinMessage = {
+    } else if (action === 'send_message') {
+      // Send message
+      const user = activeUsers.get(messageData.userId);
+      if (!user) {
+        return res.status(400).json({ error: 'User not found' });
+      }
+
+      // Update user activity
+      user.lastSeen = new Date().toISOString();
+      activeUsers.set(user.id, user);
+
+      // Basic spam protection
+      const recentMessages = chatHistory.filter(msg =>
+        msg.userName === user.name &&
+        msg.type === 'message' &&
+        (Date.now() - new Date(msg.timestamp).getTime()) < 10000 // 10 seconds
+      );
+
+      if (recentMessages.length >= 3) {
+        return res.status(429).json({ error: 'Too many messages. Please wait.' });
+      }
+
+      const message = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        userName: user.name,
+        userAvatar: user.avatar,
+        content: messageData.content.trim(),
+        timestamp: new Date().toISOString(),
+        type: 'message'
+      };
+
+      chatHistory.push(message);
+      if (chatHistory.length > 100) {
+        chatHistory.shift();
+      }
+
+      lastUpdate = Date.now();
+      res.json({ success: true, message });
+
+    } else if (action === 'leave') {
+      // User left chat
+      const user = activeUsers.get(userData.userId);
+      if (user) {
+        activeUsers.delete(userData.userId);
+
+        const leaveMessage = {
           id: Date.now().toString(),
-          userName: userData.name,
-          userAvatar: userData.avatar,
-          content: `${userData.name} присоединился к чату`,
-          timestamp: new Date().toISOString(),
-          type: 'join'
-        };
-
-        chatHistory.push(joinMessage);
-        if (chatHistory.length > 100) {
-          chatHistory.shift();
-        }
-
-        socket.broadcast.emit('message', joinMessage);
-      });
-
-      socket.on('send_message', (messageData) => {
-        const user = activeUsers.get(socket.id);
-        if (!user) return;
-
-        const message = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
           userName: user.name,
           userAvatar: user.avatar,
-          content: messageData.content,
+          content: `${user.name} покинул чат`,
           timestamp: new Date().toISOString(),
-          type: 'message'
+          type: 'leave'
         };
 
-        // Add to history
-        chatHistory.push(message);
+        chatHistory.push(leaveMessage);
         if (chatHistory.length > 100) {
           chatHistory.shift();
         }
 
-        // Broadcast to all users
-        io.emit('message', message);
-      });
+        lastUpdate = Date.now();
+        res.json({ success: true, message: leaveMessage });
+      } else {
+        res.json({ success: true });
+      }
 
-      socket.on('disconnect', () => {
-        const user = activeUsers.get(socket.id);
-        if (user) {
-          activeUsers.delete(socket.id);
+    } else if (action === 'heartbeat') {
+      // Update user activity
+      const user = activeUsers.get(userData.userId);
+      if (user) {
+        user.lastSeen = new Date().toISOString();
+        activeUsers.set(user.id, user);
+      }
+      res.json({ success: true });
 
-          // Broadcast updated user count
-          io.emit('active_users', activeUsers.size);
+    } else {
+      res.status(400).json({ error: 'Invalid action' });
+    }
 
-          // Broadcast leave message
-          const leaveMessage = {
-            id: Date.now().toString(),
-            userName: user.name,
-            userAvatar: user.avatar,
-            content: `${user.name} покинул чат`,
-            timestamp: new Date().toISOString(),
-            type: 'leave'
-          };
-
-          chatHistory.push(leaveMessage);
-          if (chatHistory.length > 100) {
-            chatHistory.shift();
-          }
-
-          socket.broadcast.emit('message', leaveMessage);
-        }
-
-        console.log('User disconnected:', socket.id);
-      });
-
-      socket.on('typing_start', (userData) => {
-        socket.broadcast.emit('user_typing', {
-          userName: userData.name,
-          isTyping: true
-        });
-      });
-
-      socket.on('typing_stop', (userData) => {
-        socket.broadcast.emit('user_typing', {
-          userName: userData.name,
-          isTyping: false
-        });
-      });
-    });
-
-    res.socket.server.io = io;
   } else {
-    console.log('Socket.IO server already running');
+    res.status(405).json({ error: 'Method not allowed' });
   }
-
-  res.end();
 }

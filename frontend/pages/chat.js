@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { io } from 'socket.io-client';
 
 export default function GlobalChat() {
   const [messages, setMessages] = useState([]);
@@ -9,12 +8,13 @@ export default function GlobalChat() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeUsers, setActiveUsers] = useState(0);
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingUsers, setTypingUsers] = useState([]);
+  const [isSending, setIsSending] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(0);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
-  const socketRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
+  const pollIntervalRef = useRef(null);
+  const heartbeatIntervalRef = useRef(null);
+  const userIdRef = useRef(null);
 
   useEffect(() => {
     // Load user profile
@@ -23,50 +23,16 @@ export default function GlobalChat() {
       try {
         const profileData = JSON.parse(storedProfile);
         setUser(profileData);
+        userIdRef.current = `user_${profileData.name}_${Date.now()}`;
 
-        // Connect to Socket.IO
-        const socket = io(process.env.NODE_ENV === 'production'
-          ? 'https://mindpath-amber.vercel.app'
-          : 'http://localhost:3000', {
-          path: '/api/chat/socket'
-        });
+        // Join chat
+        joinChat(profileData);
 
-        socketRef.current = socket;
+        // Start polling for messages
+        startPolling();
 
-        socket.on('connect', () => {
-          console.log('Connected to chat server');
-          socket.emit('join_chat', profileData);
-        });
-
-        socket.on('disconnect', () => {
-          console.log('Disconnected from chat server');
-        });
-
-        socket.on('chat_history', (history) => {
-          setMessages(history);
-        });
-
-        socket.on('message', (message) => {
-          setMessages(prev => [...prev, message]);
-        });
-
-        socket.on('active_users', (count) => {
-          setActiveUsers(count);
-        });
-
-        socket.on('user_typing', (data) => {
-          setTypingUsers(prev => {
-            const filtered = prev.filter(u => u.userName !== data.userName);
-            if (data.isTyping) {
-              return [...filtered, data];
-            }
-            return filtered;
-          });
-        });
-
-        socket.on('connect_error', (error) => {
-          console.error('Socket connection error:', error);
-        });
+        // Start heartbeat
+        startHeartbeat();
 
       } catch (error) {
         console.error('Error loading profile:', error);
@@ -76,62 +42,140 @@ export default function GlobalChat() {
     setIsLoading(false);
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
+
+      // Leave chat
+      if (user && userIdRef.current) {
+        leaveChat();
       }
     };
   }, []);
+
+  const joinChat = async (profileData) => {
+    try {
+      const response = await fetch('/api/chat/socket', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'join',
+          userData: {
+            userId: userIdRef.current,
+            name: profileData.name,
+            avatar: profileData.avatar
+          }
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Joined chat successfully');
+        loadMessages(); // Load initial messages
+      }
+    } catch (error) {
+      console.error('Error joining chat:', error);
+    }
+  };
+
+  const leaveChat = async () => {
+    try {
+      await fetch('/api/chat/socket', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'leave',
+          userData: {
+            userId: userIdRef.current
+          }
+        }),
+      });
+    } catch (error) {
+      console.error('Error leaving chat:', error);
+    }
+  };
+
+  const startPolling = () => {
+    // Poll every 2 seconds for new messages
+    pollIntervalRef.current = setInterval(loadMessages, 2000);
+  };
+
+  const startHeartbeat = () => {
+    // Send heartbeat every 30 seconds to stay active
+    heartbeatIntervalRef.current = setInterval(() => {
+      fetch('/api/chat/socket', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'heartbeat',
+          userData: {
+            userId: userIdRef.current
+          }
+        }),
+      }).catch(error => console.error('Heartbeat error:', error));
+    }, 30000);
+  };
+
+  const loadMessages = async () => {
+    try {
+      const response = await fetch('/api/chat/socket');
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || []);
+        setActiveUsers(data.activeUsers || 0);
+        setLastUpdate(data.lastUpdate || 0);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || !socketRef.current) return;
+    if (!newMessage.trim() || !user || isSending) return;
 
-    socketRef.current.emit('send_message', {
-      content: newMessage.trim()
-    });
+    setIsSending(true);
 
-    setNewMessage('');
-    handleTypingStop();
-  };
+    try {
+      const response = await fetch('/api/chat/socket', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'send_message',
+          messageData: {
+            userId: userIdRef.current,
+            content: newMessage.trim()
+          }
+        }),
+      });
 
-  const handleTypingStart = () => {
-    if (!socketRef.current || !user) return;
-
-    socketRef.current.emit('typing_start', {
-      name: user.name
-    });
-
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
+      if (response.ok) {
+        setNewMessage('');
+        loadMessages(); // Refresh messages immediately
+      } else {
+        const errorData = await response.json();
+        alert('Ошибка отправки: ' + errorData.error);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Ошибка подключения');
+    } finally {
+      setIsSending(false);
     }
-
-    // Set new timeout to stop typing indicator
-    typingTimeoutRef.current = setTimeout(() => {
-      handleTypingStop();
-    }, 1000);
-  };
-
-  const handleTypingStop = () => {
-    if (!socketRef.current || !user) return;
-
-    socketRef.current.emit('typing_stop', {
-      name: user.name
-    });
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = null;
-    }
-  };
-
-  const handleInputChange = (e) => {
-    setNewMessage(e.target.value);
-    handleTypingStart();
   };
 
   const scrollToBottom = () => {
@@ -229,22 +273,6 @@ export default function GlobalChat() {
             ref={chatContainerRef}
             className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50"
           >
-            {/* Typing indicator */}
-            {typingUsers.length > 0 && (
-              <div className="flex items-center space-x-2 text-sm text-gray-500 px-4">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                </div>
-                <span>
-                  {typingUsers.length === 1
-                    ? `${typingUsers[0].userName} печатает...`
-                    : `${typingUsers.length} пользователя печатает...`
-                  }
-                </span>
-              </div>
-            )}
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -324,15 +352,15 @@ export default function GlobalChat() {
               />
               <button
                 type="submit"
-                disabled={!newMessage.trim()}
+                disabled={!newMessage.trim() || isSending}
                 className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
-                <span>📤</span>
-                <span className="hidden sm:inline">Отправить</span>
+                <span>{isSending ? '⏳' : '📤'}</span>
+                <span className="hidden sm:inline">{isSending ? 'Отправка...' : 'Отправить'}</span>
               </button>
             </form>
             <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-              <span>Real-time чат с WebSocket</span>
+              <span>Real-time чат с обновлением каждые 2 сек</span>
               <span>{newMessage.length}/500</span>
             </div>
           </div>
