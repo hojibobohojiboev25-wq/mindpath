@@ -19,10 +19,35 @@
 - ✅ Рекомендации по развитию
 
 **Переменные окружения в Vercel:**
-- `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot`
-- `TELEGRAM_BOT_TOKEN = ваш-telegram-bot-token`
+- `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot` ← **ОБЯЗАТЕЛЬНО!**
+- `TELEGRAM_BOT_TOKEN = 8199802315:AAFPCK-0692KRuZLAYjM4SCISaq7VCFpQhU`
 - `OPENAI_API_KEY = ваш-openai-api-key`
 - `STABILITY_API_KEY = ваш-stability-api-key`
+
+## 🔧 Отладка проблем с Telegram виджетом
+
+Если кнопка не отображается, проверьте:
+
+1. **Переменная окружения:**
+   ```bash
+   # В Vercel Dashboard → Settings → Environment Variables
+   NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot
+   ```
+
+2. **Домен бота в BotFather:**
+   ```bash
+   /setdomain
+   # Введите: mindpath-amber.vercel.app
+   ```
+
+3. **Консоль браузера:**
+   - Откройте DevTools (F12)
+   - Проверьте вкладку Console на ошибки
+   - Ищите сообщения о Telegram widget
+
+4. **Проверка виджета:**
+   - Виджет должен загружаться автоматически
+   - Если видите "Username invalid" - проблема с username бота
 
 ## 🚀 Особенности
 
