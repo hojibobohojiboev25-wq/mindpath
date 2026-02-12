@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import AuthCheck from '../components/AuthCheck';
 import QuestionnaireForm from '../components/QuestionnaireForm';
 
 export default function Questionnaire() {
@@ -11,28 +10,19 @@ export default function Questionnaire() {
   const router = useRouter();
 
   useEffect(() => {
-    checkAuthAndLoadQuestions();
+    loadProfileAndQuestions();
   }, []);
 
-  const checkAuthAndLoadQuestions = async () => {
+  const loadProfileAndQuestions = async () => {
     try {
-      // Check authentication
-      const authResponse = await fetch('/api/auth/me', {
-        credentials: 'include'
-      });
-
-      if (!authResponse.ok) {
-        router.push('/');
-        return;
+      // Load user profile
+      const storedProfile = localStorage.getItem('user_profile');
+      if (storedProfile) {
+        setUser(JSON.parse(storedProfile));
       }
 
-      const authData = await authResponse.json();
-      setUser(authData.user);
-
       // Load questionnaire questions
-      const questionsResponse = await fetch('/api/questionnaire/questions', {
-        credentials: 'include'
-      });
+      const questionsResponse = await fetch('/api/questionnaire/questions');
 
       if (questionsResponse.ok) {
         const questionsData = await questionsResponse.json();
@@ -55,8 +45,7 @@ export default function Questionnaire() {
   }
 
   return (
-    <AuthCheck user={user}>
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
         <Head>
           <title>Опрос - Карта Мышления</title>
           <meta name="description" content="Заполните анкету для создания вашей карты мышления" />
@@ -101,6 +90,5 @@ export default function Questionnaire() {
           </div>
         </main>
       </div>
-    </AuthCheck>
   );
 }

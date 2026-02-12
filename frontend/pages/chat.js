@@ -1,0 +1,288 @@
+import { useState, useEffect, useRef } from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
+
+export default function GlobalChat() {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
+
+  useEffect(() => {
+    // Load user profile
+    const storedProfile = localStorage.getItem('user_profile');
+    if (storedProfile) {
+      try {
+        setUser(JSON.parse(storedProfile));
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+    setIsLoading(false);
+
+    // Load chat messages
+    loadMessages();
+
+    // Set up polling for new messages
+    const interval = setInterval(loadMessages, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const loadMessages = async () => {
+    try {
+      const response = await fetch('/api/chat/messages');
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || []);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const sendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !user) return;
+
+    try {
+      const messageData = {
+        userId: user.name + '_' + Date.now(), // Simple unique ID
+        userName: user.name,
+        userAvatar: user.avatar,
+        content: newMessage.trim(),
+        timestamp: new Date().toISOString()
+      };
+
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messageData),
+      });
+
+      if (response.ok) {
+        setNewMessage('');
+        loadMessages(); // Refresh messages immediately
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Доступ запрещен</h1>
+          <p className="text-gray-600 mb-6">Создайте профиль, чтобы участвовать в чате</p>
+          <Link href="/" className="btn-primary">
+            Создать профиль
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Head>
+        <title>Глобальный чат - Карта Мышления</title>
+        <meta name="description" content="Общайтесь с людьми со всего мира в реальном времени" />
+      </Head>
+
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="text-gray-600 hover:text-gray-900">
+                ← На главную
+              </Link>
+              <div className="flex items-center space-x-2">
+                {user.avatar && (
+                  <span className="text-2xl">{user.avatar}</span>
+                )}
+                <span className="font-medium text-gray-900">{user.name}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span>{messages.length} сообщений</span>
+              </div>
+              <Link href="/questionnaire" className="btn-secondary text-sm">
+                🧠 Анализ
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Chat Container */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Chat Header */}
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold">💬 Глобальный чат</h1>
+                <p className="text-blue-100">Общайтесь с людьми со всего мира</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold">{messages.length}</div>
+                <div className="text-sm text-blue-100">сообщений</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div
+            ref={chatContainerRef}
+            className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50"
+          >
+            {messages.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">💬</span>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Чат пуст
+                </h3>
+                <p className="text-gray-600">
+                  Будьте первым, кто напишет сообщение!
+                </p>
+              </div>
+            ) : (
+              messages.map((message) => (
+                <div
+                  key={message.id || message.timestamp}
+                  className={`flex items-start space-x-3 ${
+                    message.userName === user.name ? 'justify-end' : ''
+                  }`}
+                >
+                  {message.userName !== user.name && (
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                        <span className="text-sm">{message.userAvatar || '👤'}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    message.userName === user.name
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white border border-gray-200'
+                  }`}>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className={`text-xs font-medium ${
+                        message.userName === user.name ? 'text-blue-100' : 'text-gray-600'
+                      }`}>
+                        {message.userName}
+                      </span>
+                      <span className={`text-xs ${
+                        message.userName === user.name ? 'text-blue-200' : 'text-gray-400'
+                      }`}>
+                        {formatTime(message.timestamp)}
+                      </span>
+                    </div>
+                    <p className={`text-sm ${
+                      message.userName === user.name ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {message.content}
+                    </p>
+                  </div>
+
+                  {message.userName === user.name && (
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-sm text-white">{message.userAvatar || '👤'}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Message Input */}
+          <div className="border-t border-gray-200 p-4">
+            <form onSubmit={sendMessage} className="flex space-x-3">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Напишите сообщение..."
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                maxLength={500}
+              />
+              <button
+                type="submit"
+                disabled={!newMessage.trim()}
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                <span>📤</span>
+                <span className="hidden sm:inline">Отправить</span>
+              </button>
+            </form>
+            <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+              <span>Сообщения обновляются автоматически каждые 3 секунды</span>
+              <span>{newMessage.length}/500</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <span className="text-2xl">ℹ️</span>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-blue-800">
+                Правила чата
+              </h3>
+              <div className="mt-1 text-sm text-blue-700">
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Будьте вежливы и уважительны к другим участникам</li>
+                  <li>Не используйте оскорбительные выражения</li>
+                  <li>Общайтесь на русском или английском языке</li>
+                  <li>Не спамьте и не рекламируйте</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

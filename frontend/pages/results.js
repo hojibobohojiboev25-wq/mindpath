@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import AuthCheck from '../components/AuthCheck';
 import MindMapVisualization from '../components/MindMapVisualization';
 import Recommendations from '../components/Recommendations';
 
@@ -13,36 +12,25 @@ export default function Results() {
   const router = useRouter();
 
   useEffect(() => {
-    checkAuthAndLoadResults();
+    loadProfileAndResults();
   }, []);
 
-  const checkAuthAndLoadResults = async () => {
+  const loadProfileAndResults = async () => {
     try {
-      // Check authentication
-      const authResponse = await fetch('/api/auth/me', {
-        credentials: 'include'
-      });
-
-      if (!authResponse.ok) {
-        router.push('/');
-        return;
+      // Load user profile
+      const storedProfile = localStorage.getItem('user_profile');
+      if (storedProfile) {
+        setUser(JSON.parse(storedProfile));
       }
 
-      const authData = await authResponse.json();
-      setUser(authData.user);
-
       // Load latest results
-      const resultsResponse = await fetch('/api/results/latest', {
-        credentials: 'include'
-      });
+      const resultsResponse = await fetch('/api/results/latest');
 
       if (resultsResponse.ok) {
         const resultsData = await resultsResponse.json();
         setResult(resultsData.result);
       } else if (resultsResponse.status === 404) {
-        // No results yet, redirect to questionnaire
-        router.push('/questionnaire');
-        return;
+        setError('Результаты анализа не найдены. Сначала пройдите опрос.');
       } else {
         setError('Ошибка загрузки результатов');
       }
@@ -83,8 +71,7 @@ export default function Results() {
   }
 
   return (
-    <AuthCheck user={user}>
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
         <Head>
           <title>Результаты - Карта Мышления</title>
           <meta name="description" content="Ваши результаты анализа личности и карта мышления" />
@@ -211,6 +198,5 @@ export default function Results() {
           )}
         </main>
       </div>
-    </AuthCheck>
   );
 }
