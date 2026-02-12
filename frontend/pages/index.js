@@ -90,67 +90,87 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {!isAuthenticated ? (
-          <div className="text-center">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                Откройте свою внутреннюю карту мышления
-              </h2>
-              <p className="text-xl text-gray-600 mb-8">
-                Пройдите персонализированный анализ личности с помощью искусственного интеллекта
-                и получите визуальную карту вашего мышления и рекомендации по саморазвитию.
-              </p>
+        <div className="text-center">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Добро пожаловать в Карту Мышления! 🧠
+            </h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Создайте персональную карту мышления с помощью ИИ и общайтесь в глобальном чате со всего мира!
+            </p>
 
-              <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-                  Что вы получите:
-                </h3>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="text-center">
+            <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+              <h3 className="text-2xl font-semibold text-gray-900 mb-6">
+                🚀 Что вы можете сделать:
+              </h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                <Link href="/questionnaire" className="block">
+                  <div className="card hover:shadow-lg transition-shadow cursor-pointer">
                     <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-2xl">📊</span>
                     </div>
                     <h4 className="font-semibold text-gray-900 mb-2">Анализ личности</h4>
                     <p className="text-gray-600 text-sm">
-                      Подробный анализ ваших черт характера и особенностей мышления
+                      Пройдите тест и получите подробный анализ вашей личности с рекомендациями
                     </p>
                   </div>
+                </Link>
 
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl">🗺️</span>
+                <Link href="/chat" className="block">
+                  <div className="card hover:shadow-lg transition-shadow cursor-pointer border-2 border-primary-200 hover:border-primary-400">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">💬</span>
                     </div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Визуальная карта</h4>
+                    <h4 className="font-semibold text-gray-900 mb-2">Глобальный чат</h4>
                     <p className="text-gray-600 text-sm">
-                      Красивая интерактивная карта мышления, созданная ИИ
+                      Общайтесь с людьми со всего мира в реальном времени
                     </p>
+                    <div className="mt-3 text-center">
+                      <span className="inline-block bg-green-500 text-white text-sm px-3 py-1 rounded-full">
+                        Популярно 🔥
+                      </span>
+                    </div>
                   </div>
+                </Link>
 
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl">🎯</span>
-                    </div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Персональные советы</h4>
-                    <p className="text-gray-600 text-sm">
-                      Индивидуальные рекомендации по саморазвитию и достижению целей
-                    </p>
+                <div className="card">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">🎯</span>
                   </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Персонализация</h4>
+                  <p className="text-gray-600 text-sm">
+                    Создайте уникальный профиль с именем и аватаром
+                  </p>
+                  {user && (
+                    <div className="mt-3 text-center">
+                      <span className="inline-block bg-purple-500 text-white text-sm px-3 py-1 rounded-full">
+                        Профиль готов ✓
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
+            </div>
 
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-                  Войдите через Telegram
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Для начала анализа нам нужно знать немного о вас. Авторизуйтесь через Telegram для быстрого доступа.
-                </p>
-
-                <TelegramLogin onLogin={handleLogin} />
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8">
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+                🌟 Начните прямо сейчас!
+              </h3>
+              <p className="text-gray-700 mb-6">
+                Выберите, что вас интересует больше - анализ личности или общение в глобальном чате.
+                Все функции доступны бесплатно и без регистрации!
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/chat" className="btn-primary text-lg px-8 py-3">
+                  💬 Открыть глобальный чат
+                </Link>
+                <Link href="/questionnaire" className="btn-secondary text-lg px-8 py-3">
+                  🧠 Пройти анализ личности
+                </Link>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </main>
 
       {/* Footer */}
