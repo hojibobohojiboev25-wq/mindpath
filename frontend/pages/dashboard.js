@@ -42,6 +42,25 @@ export default function Dashboard() {
     });
   };
 
+  const exportResult = (result) => {
+    const exportData = {
+      date: formatDate(result.createdAt),
+      personality_analysis: result.personalityAnalysis,
+      recommendations: result.recommendations,
+      exported_at: new Date().toISOString()
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+    const exportFileDefaultName = `mindmap-analysis-${result.id}-${new Date().toISOString().split('T')[0]}.json`;
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
   return (
     <AuthCheck user={user}>
       <div className="min-h-screen bg-gray-50">
@@ -107,7 +126,7 @@ export default function Dashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="grid md:grid-cols-4 gap-6 mb-8">
             <Link href="/questionnaire" className="block">
               <div className="card hover:shadow-lg transition-shadow cursor-pointer">
                 <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -121,6 +140,42 @@ export default function Dashboard() {
                 </p>
               </div>
             </Link>
+
+            <div className="card hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">📊</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                Моя статистика
+              </h3>
+              <p className="text-gray-600 text-sm text-center">
+                Посмотрите динамику развития ваших навыков мышления
+              </p>
+            </div>
+
+            <div className="card hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">🎯</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                Цели и планы
+              </h3>
+              <p className="text-gray-600 text-sm text-center">
+                Управляйте своими целями и отслеживайте прогресс
+              </p>
+            </div>
+
+            <div className="card hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">📚</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                Рекомендации
+              </h3>
+              <p className="text-gray-600 text-sm text-center">
+                Персональные советы по саморазвитию и улучшению
+              </p>
+            </div>
 
             <div className="card">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -153,9 +208,20 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold text-gray-900">
                 История анализов
               </h2>
-              <span className="text-sm text-gray-500">
-                {results.length} результат(ов)
-              </span>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-500">
+                  {results.length} результат(ов)
+                </span>
+                {/* Admin link - show only for specific users */}
+                {user?.telegram_id === 123456789 && (
+                  <a
+                    href="/admin"
+                    className="text-sm bg-red-100 text-red-700 px-3 py-1 rounded-full hover:bg-red-200 transition-colors"
+                  >
+                    🔧 Админ панель
+                  </a>
+                )}
+              </div>
             </div>
 
             {results.length === 0 ? (
@@ -191,12 +257,21 @@ export default function Dashboard() {
                           </p>
                         </div>
                       </div>
-                      <Link
-                        href={`/results?id=${result.id}`}
-                        className="btn-primary text-sm"
-                      >
-                        Просмотреть
-                      </Link>
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/results?id=${result.id}`}
+                          className="btn-primary text-sm"
+                        >
+                          Просмотреть
+                        </Link>
+                        <button
+                          onClick={() => exportResult(result)}
+                          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                          title="Экспорт результатов"
+                        >
+                          📄
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -211,6 +286,17 @@ export default function Dashboard() {
                         <p className="text-gray-600 mt-1">
                           {result.recommendations?.[0]?.title || 'Доступны рекомендации'}
                         </p>
+                      </div>
+                    </div>
+
+                    {/* Progress indicator */}
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                        <span>Завершенность анализа</span>
+                        <span>85%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
                       </div>
                     </div>
                   </div>

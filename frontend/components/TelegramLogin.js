@@ -38,24 +38,32 @@ export default function TelegramLogin({ onLogin }) {
         return response.json();
       })
               .then(data => {
-                console.log('Auth response data:', data);
+                console.log('📥 Auth response data:', data);
                 if (data.success && data.user) {
                   // Store auth data
                   const authData = {
                     user: data.user,
                     timestamp: Date.now()
                   };
-                  localStorage.setItem('telegram_auth', JSON.stringify(authData));
-                  console.log('Auth data saved to localStorage:', authData);
 
-                  // Show success message and redirect
-                  alert('Авторизация успешна! Перенаправление...');
+                  try {
+                    localStorage.setItem('telegram_auth', JSON.stringify(authData));
+                    console.log('✅ Auth data saved to localStorage:', authData);
 
-                  // Force page reload to show authenticated state
-                  setTimeout(() => {
-                    window.location.href = window.location.href;
-                  }, 1000);
+                    // Show success message
+                    alert('Авторизация успешна! Перенаправление в личный кабинет...');
+
+                    // Force redirect to dashboard
+                    setTimeout(() => {
+                      console.log('🚀 Redirecting to dashboard...');
+                      window.location.href = '/dashboard';
+                    }, 1500);
+                  } catch (storageError) {
+                    console.error('❌ localStorage error:', storageError);
+                    alert('Ошибка сохранения данных авторизации');
+                  }
                 } else {
+                  console.error('❌ Auth failed:', data.error);
                   alert('Ошибка авторизации: ' + (data.error || 'Неизвестная ошибка'));
                 }
               })
