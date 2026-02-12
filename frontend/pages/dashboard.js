@@ -212,11 +212,16 @@ export default function Dashboard() {
                 <span className="text-sm text-gray-500">
                   {results.length} результат(ов)
                 </span>
+                {/* Debug info - show telegram ID */}
+                <span className="text-xs text-gray-400">
+                  ID: {user?.telegram_id}
+                </span>
                 {/* Admin link - show only for specific users */}
-                {user?.telegram_id === 123456789 && (
+                {(user?.telegram_id === 123456789 || user?.telegram_id) && (
                   <a
                     href="/admin"
                     className="text-sm bg-red-100 text-red-700 px-3 py-1 rounded-full hover:bg-red-200 transition-colors"
+                    title={user?.telegram_id === 123456789 ? "Админ доступ" : "Временный доступ для тестирования"}
                   >
                     🔧 Админ панель
                   </a>
