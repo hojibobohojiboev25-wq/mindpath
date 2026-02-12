@@ -160,8 +160,7 @@ export default function GlobalChat() {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
+  const sendMessage = async () => {
     if (!newMessage.trim() || !user || isSending) return;
 
     setIsSending(true);
@@ -196,6 +195,11 @@ export default function GlobalChat() {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    sendMessage();
   };
 
   const scrollToBottom = () => {
@@ -342,7 +346,7 @@ export default function GlobalChat() {
 
           {/* Message Input */}
           <div className="border-t border-gray-200 p-4">
-            <form onSubmit={sendMessage} className="flex space-x-3">
+            <form onSubmit={handleSubmit} className="flex space-x-3">
               <input
                 type="text"
                 value={newMessage}
@@ -352,7 +356,8 @@ export default function GlobalChat() {
                 maxLength={500}
               />
               <button
-                type="submit"
+                type="button"
+                onClick={sendMessage}
                 disabled={!newMessage.trim() || isSending}
                 className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >

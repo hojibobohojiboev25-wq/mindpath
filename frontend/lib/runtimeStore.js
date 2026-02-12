@@ -65,12 +65,14 @@ function getStore() {
 }
 
 function updateStore(mutator) {
-  updateQueue = updateQueue.then(async () => {
-    const store = readStoreSync();
-    const next = mutator(store) || store;
-    writeStoreSync(next);
-    return next;
-  });
+  updateQueue = updateQueue
+    .catch(() => null)
+    .then(async () => {
+      const store = readStoreSync();
+      const next = mutator(store) || store;
+      writeStoreSync(next);
+      return next;
+    });
   return updateQueue;
 }
 

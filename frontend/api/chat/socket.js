@@ -113,6 +113,9 @@ async function handler(req, res) {
         return draft;
       });
 
+      if (!responsePayload) {
+        return res.status(500).json({ error: 'Failed to save message' });
+      }
       return res.status(responsePayload.status).json(responsePayload.body);
 
     } else if (action === 'leave') {
