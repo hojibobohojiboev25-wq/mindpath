@@ -18,6 +18,8 @@ cd frontend
 vercel --prod
 
 echo "✅ Frontend развернут на Vercel!"
-echo "🔧 Не забудьте добавить переменные окружения в Vercel dashboard:"
-echo "   - NEXT_PUBLIC_TELEGRAM_BOT_USERNAME"
-echo "   - BACKEND_URL (URL вашего backend сервера)"
+echo "🔧 Добавьте переменные окружения в Vercel dashboard:"
+echo "   - NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=TrixGo_bot"
+echo "   - TELEGRAM_BOT_TOKEN=ваш-бот-токен"
+echo "   - OPENAI_API_KEY=ваш-openai-ключ"
+echo "   - STABILITY_API_KEY=ваш-stability-ключ"
