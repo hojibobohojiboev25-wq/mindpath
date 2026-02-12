@@ -14,6 +14,8 @@ export default function GlobalChat() {
   const heartbeatIntervalRef = useRef(null);
   const userIdRef = useRef(null);
   const lastTimestampRef = useRef(0);
+  const getSafeName = (profile) =>
+    profile?.name || profile?.firstName || profile?.username || 'Гость';
 
   useEffect(() => {
     // Load user profile
@@ -21,11 +23,16 @@ export default function GlobalChat() {
     if (storedProfile) {
       try {
         const profileData = JSON.parse(storedProfile);
-        setUser(profileData);
-        userIdRef.current = profileData.id || `user_${profileData.name}`;
+        const normalized = {
+          ...profileData,
+          name: getSafeName(profileData),
+          avatar: profileData?.avatar || '👤'
+        };
+        setUser(normalized);
+        userIdRef.current = profileData.id || `user_${normalized.name}`;
 
         // Join chat
-        joinChat(profileData);
+        joinChat(normalized);
 
         // Start polling for messages
         startPolling();
@@ -66,8 +73,8 @@ export default function GlobalChat() {
           action: 'join',
           userData: {
             userId: userIdRef.current,
-            name: profileData.name,
-            avatar: profileData.avatar
+            name: getSafeName(profileData),
+            avatar: profileData.avatar || '👤'
           }
         }),
       });
@@ -169,7 +176,7 @@ export default function GlobalChat() {
           action: 'send_message',
           messageData: {
             userId: userIdRef.current,
-            userName: user.name,
+            userName: getSafeName(user),
             userAvatar: user.avatar || '👤',
             content: newMessage.trim()
           }

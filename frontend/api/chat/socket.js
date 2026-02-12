@@ -42,15 +42,16 @@ async function handler(req, res) {
     const { action, userData, messageData } = req.body;
 
     if (action === 'join') {
-      if (!userData?.userId || !userData?.name) {
+      if (!userData?.userId) {
         return res.status(400).json({ error: 'Invalid user data' });
       }
+      const safeName = userData?.name || `user_${String(userData.userId).slice(-6)}`;
       const nowIso = new Date().toISOString();
       await updateStore((draft) => {
         const users = toActiveUsersMap(draft.chat.users);
         users.set(userData.userId, {
           id: userData.userId,
-          name: userData.name,
+          name: safeName,
           avatar: userData.avatar || '👤',
           joinedAt: nowIso,
           lastSeen: nowIso
@@ -73,13 +74,10 @@ async function handler(req, res) {
         const users = toActiveUsersMap(draft.chat.users);
         let user = users.get(messageData.userId);
         if (!user) {
-          if (!messageData.userName) {
-            responsePayload = { status: 400, body: { error: 'User not found' } };
-            return draft;
-          }
+          const safeName = messageData.userName || `user_${String(messageData.userId).slice(-6)}`;
           user = {
             id: messageData.userId,
-            name: messageData.userName,
+            name: safeName,
             avatar: messageData.userAvatar || '👤',
             joinedAt: nowIso,
             lastSeen: nowIso
