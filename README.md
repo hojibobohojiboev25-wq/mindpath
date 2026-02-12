@@ -121,14 +121,13 @@
 - **React 18** - UI библиотека
 - **Tailwind CSS** - стилизация
 - **D3.js** - интерактивная визуализация
-- **Telegram Login Widget** - авторизация
+- **Profile Setup** - локальный профиль без регистрации
 
 ## 📋 Предварительные требования
 
 - Node.js 16+
 - npm или yarn
 - Аккаунты и API ключи:
-  - Telegram Bot (через BotFather)
   - OpenAI API
   - Stability AI API
 
@@ -141,8 +140,11 @@
    - **Root Directory**: `frontend`
    - **Framework Preset**: `Next.js`
 3. **Добавьте переменные окружения:**
-   - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` = `TrixGo_bot`
-   - `BACKEND_URL` = `https://ваш-backend-url.com/api`
+   - `OPENAI_API_KEY`
+   - `STABILITY_API_KEY`
+   - `ADMIN_USERNAME`
+   - `ADMIN_PASSWORD`
+   - `JWT_SECRET`
 
 **Vercel автоматически обнаружит Next.js и развернет приложение!** 🎉
 
@@ -173,14 +175,6 @@ cd ../frontend && npm install
 
 ## 🔧 Настройка проекта
 
-### 2. Настройка Telegram Bot
-
-1. Перейдите к [@BotFather](https://t.me/botfather) в Telegram
-2. Создайте нового бота командой `/newbot`
-3. Сохраните токен бота
-4. Включите возможность авторизации через веб: `/setdomain`
-5. Установите домен вашего приложения
-
 ### 3. Настройка API ключей
 
 Создайте файл `.env` в директории `backend/`:
@@ -191,13 +185,14 @@ PORT=3001
 FRONTEND_URL=http://localhost:3000
 SESSION_SECRET=your-super-secret-session-key-change-this-in-production
 
-# Telegram Bot Configuration
-TELEGRAM_BOT_TOKEN=your-telegram-bot-token-here
-TELEGRAM_BOT_USERNAME=your-bot-username-here
-
 # AI APIs
 OPENAI_API_KEY=your-openai-api-key-here
 STABILITY_API_KEY=your-stability-ai-api-key-here
+
+# Admin
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change-me
+JWT_SECRET=change-me
 
 # Database
 DATABASE_URL=./database.sqlite
@@ -206,7 +201,11 @@ DATABASE_URL=./database.sqlite
 Для фронтенда создайте `.env.local`:
 
 ```env
-NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=your-bot-username-here
+OPENAI_API_KEY=your-openai-api-key-here
+STABILITY_API_KEY=your-stability-ai-api-key-here
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change-me
+JWT_SECRET=change-me
 ```
 
 ## 🚀 Запуск приложения
@@ -265,8 +264,11 @@ vercel --prod --cwd frontend
 #    - Build Command: npm run build
 #    - Output Directory: .next (оставьте пустым)
 # 3. Добавьте переменные окружения:
-#    - NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot
-#    - BACKEND_URL = https://your-backend-url.com/api
+#    - OPENAI_API_KEY
+#    - STABILITY_API_KEY
+#    - ADMIN_USERNAME
+#    - ADMIN_PASSWORD
+#    - JWT_SECRET
 ```
 
 **Backend (Railway/Render/VPS):**
@@ -370,10 +372,9 @@ pm2 start npm --name "mind-map-frontend" -- start
 
 ## 🔧 API Endpoints
 
-### Authentication
-- `POST /api/auth/telegram` - Авторизация через Telegram
-- `GET /api/auth/me` - Получение данных пользователя
-- `POST /api/auth/logout` - Выход из системы
+### Chat + Profile
+- `POST /api/chat/socket` - действия чата (join/send/heartbeat/leave)
+- `GET /api/chat/socket` - получение сообщений
 
 ### Questionnaire
 - `GET /api/questionnaire/questions` - Получение вопросов анкеты
@@ -386,10 +387,10 @@ pm2 start npm --name "mind-map-frontend" -- start
 
 ## 🐛 Troubleshooting
 
-### Проблемы с авторизацией Telegram
-- Проверьте токен бота
-- Убедитесь, что домен настроен в BotFather
-- Проверьте переменные окружения
+### Проблемы со входом в админку
+- Проверьте `ADMIN_USERNAME` и `ADMIN_PASSWORD`
+- Проверьте `JWT_SECRET`
+- Проверьте `/api/admin/login` и `/api/admin/verify`
 
 ### Проблемы с AI API
 - Проверьте баланс аккаунтов

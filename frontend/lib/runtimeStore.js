@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
-const STORE_DIR = path.join(process.cwd(), 'data');
+const STORE_DIR = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'mindpath-store')
+  : path.join(process.cwd(), 'data');
 const STORE_FILE = path.join(STORE_DIR, 'runtime-store.json');
 
 const DEFAULT_STORE = {

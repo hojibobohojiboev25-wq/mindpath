@@ -19,7 +19,8 @@ vercel --prod
 
 echo "✅ Frontend развернут на Vercel!"
 echo "🔧 Добавьте переменные окружения в Vercel dashboard:"
-echo "   - NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=TrixGo_bot"
-echo "   - TELEGRAM_BOT_TOKEN=ваш-бот-токен"
 echo "   - OPENAI_API_KEY=ваш-openai-ключ"
 echo "   - STABILITY_API_KEY=ваш-stability-ключ"
+echo "   - ADMIN_USERNAME=admin"
+echo "   - ADMIN_PASSWORD=strong-password"
+echo "   - JWT_SECRET=long-random-secret"

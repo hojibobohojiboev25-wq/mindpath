@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import Head from 'next/head';
 import Link from 'next/link';
+import AppLayout from '../components/AppLayout';
 
 export default function GlobalChat() {
   const [messages, setMessages] = useState([]);
@@ -224,47 +224,30 @@ export default function GlobalChat() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <Head>
-        <title>Глобальный чат - Карта Мышления</title>
-        <meta name="description" content="Общайтесь с людьми со всего мира в реальном времени" />
-      </Head>
-
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur shadow-sm border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-gray-600 hover:text-gray-900">
-                ← На главную
-              </Link>
-              <div className="flex items-center space-x-2 bg-slate-100 rounded-full px-3 py-1">
-                {user.avatar && (
-                  <span className="text-2xl">{user.avatar}</span>
-                )}
-                <span className="font-medium text-slate-900">{user.name}</span>
-              </div>
-            </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm text-slate-700 bg-emerald-50 px-3 py-1 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span>{activeUsers} онлайн</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-slate-700 bg-slate-100 px-3 py-1 rounded-full">
-                  <span>{messages.length} сообщений</span>
-                </div>
-                <Link href="/questionnaire" className="btn-secondary text-sm">
-                  🧠 Анализ
-                </Link>
-              </div>
+    <AppLayout
+      title="Глобальный чат - MindPath"
+      description="Профессиональный глобальный чат MindPath"
+      user={user}
+      active="chat"
+      rightSlot={
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-slate-700">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-green-500"></span>
+            <span>{activeUsers} онлайн</span>
+          </div>
+          <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+            {messages.length} сообщений
           </div>
         </div>
-      </header>
+      }
+    >
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-4 flex items-center justify-between">
+          <Link href="/" className="app-nav-link inline-flex">← На главную</Link>
+          <Link href="/questionnaire" className="btn-secondary text-sm">🧠 Анализ</Link>
+        </div>
 
-      {/* Chat Container */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
           {/* Chat Header */}
           <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white p-4">
             <div className="flex items-center justify-between">
@@ -396,7 +379,7 @@ export default function GlobalChat() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

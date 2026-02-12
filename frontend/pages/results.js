@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
 import MindMapVisualization from '../components/MindMapVisualization';
 import Recommendations from '../components/Recommendations';
+import AppLayout from '../components/AppLayout';
 
 export default function Results() {
   const [user, setUser] = useState(null);
@@ -56,51 +56,37 @@ export default function Results() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="card max-w-md mx-auto text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Ошибка</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={() => router.push('/questionnaire')}
-            className="btn-primary"
-          >
-            Пройти опрос заново
-          </button>
+      <AppLayout title="Ошибка результатов - MindPath" description="Ошибка загрузки анализа" user={user} active="results">
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <div className="card max-w-md text-center">
+            <h2 className="mb-4 text-2xl font-bold text-red-600">Ошибка</h2>
+            <p className="mb-6 text-slate-600">{error}</p>
+            <button
+              onClick={() => router.push('/questionnaire')}
+              className="btn-primary"
+            >
+              Пройти опрос заново
+            </button>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-        <Head>
-          <title>Результаты - Карта Мышления</title>
-          <meta name="description" content="Ваши результаты анализа личности и карта мышления" />
-        </Head>
-
-        {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center">
-                <button
-                  onClick={() => router.push('/')}
-                  className="text-gray-600 hover:text-gray-900 mr-4"
-                >
-                  ← Назад
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Ваши результаты
-                </h1>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {result ? (
-            <div className="space-y-8">
+    <AppLayout
+      title="Результаты анализа - MindPath"
+      description="Ваш персональный AI-отчёт и карта мышления"
+      user={user}
+      active="results"
+    >
+      <div className="mb-4">
+        <button onClick={() => router.push('/')} className="app-nav-link inline-flex">
+          ← Назад
+        </button>
+      </div>
+      {result ? (
+        <div className="space-y-8">
               {/* Personality Analysis */}
               <div className="card">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -174,30 +160,27 @@ export default function Results() {
 
               {/* Recommendations */}
               <Recommendations recommendations={result.recommendations} />
-            </div>
-          ) : (
-            <div className="card text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Результаты еще не готовы
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Ваш анализ находится в процессе. Обычно это занимает 1-2 минуты.
-              </p>
-              <button
-                onClick={loadProfileAndResults}
-                className="btn-primary mr-4"
-              >
-                Проверить снова
-              </button>
-              <button
-                onClick={() => router.push('/questionnaire')}
-                className="btn-secondary"
-              >
-                Пройти опрос заново
-              </button>
-            </div>
-          )}
-        </main>
-      </div>
+        </div>
+      ) : (
+        <div className="card text-center">
+          <h2 className="mb-4 text-2xl font-bold text-slate-900">Результаты еще не готовы</h2>
+          <p className="mb-6 text-slate-600">
+            Ваш анализ находится в процессе. Обычно это занимает 1-2 минуты.
+          </p>
+          <button
+            onClick={loadProfileAndResults}
+            className="btn-primary mr-4"
+          >
+            Проверить снова
+          </button>
+          <button
+            onClick={() => router.push('/questionnaire')}
+            className="btn-secondary"
+          >
+            Пройти опрос заново
+          </button>
+        </div>
+      )}
+    </AppLayout>
   );
 }

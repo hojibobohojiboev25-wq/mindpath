@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
 import QuestionnaireForm from '../components/QuestionnaireForm';
+import AppLayout from '../components/AppLayout';
 
 export default function Questionnaire() {
   const [user, setUser] = useState(null);
@@ -45,50 +45,35 @@ export default function Questionnaire() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-        <Head>
-          <title>Опрос - Карта Мышления</title>
-          <meta name="description" content="Заполните анкету для создания вашей карты мышления" />
-        </Head>
-
-        {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center">
-                <button
-                  onClick={() => router.push('/')}
-                  className="text-gray-600 hover:text-gray-900 mr-4"
-                >
-                  ← Назад
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Анкета личности
-                </h1>
-              </div>
-            </div>
+    <AppLayout
+      title="Опрос личности - MindPath"
+      description="Психологическая анкета для AI-анализа личности"
+      user={user}
+      active="questionnaire"
+    >
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-4">
+          <button
+            onClick={() => router.push('/')}
+            className="app-nav-link inline-flex"
+          >
+            ← Назад
+          </button>
+        </div>
+        <div className="card">
+          <div className="mb-8">
+            <h2 className="mb-3 text-3xl font-bold text-slate-900">Анкета личности</h2>
+            <p className="text-slate-600">
+              Ответьте максимально честно. На основе этой анкеты ИИ построит ваш профиль и карту мышления.
+            </p>
           </div>
-        </header>
 
-        {/* Main Content */}
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Расскажите о себе
-              </h2>
-              <p className="text-gray-600">
-                Для создания персональной карты мышления нам нужно лучше узнать вас.
-                Ответьте на вопросы максимально честно - это поможет получить точный анализ.
-              </p>
-            </div>
-
-            <QuestionnaireForm
-              questions={questions}
-              onComplete={() => router.push('/results')}
-            />
-          </div>
-        </main>
+          <QuestionnaireForm
+            questions={questions}
+            onComplete={() => router.push('/results')}
+          />
+        </div>
       </div>
+    </AppLayout>
   );
 }

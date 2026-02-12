@@ -22,10 +22,11 @@ echo "🔑 Добавьте переменные окружения в Railway D
 echo "   PORT=3001"
 echo "   FRONTEND_URL=https://mindpath-amber.vercel.app"
 echo "   SESSION_SECRET=ваш-секретный-ключ"
-echo "   TELEGRAM_BOT_TOKEN=ваш-telegram-bot-token"
-echo "   TELEGRAM_BOT_USERNAME=TrixGo_bot"
 echo "   OPENAI_API_KEY=ваш-openai-api-key"
 echo "   STABILITY_API_KEY=ваш-stability-api-key"
+echo "   ADMIN_USERNAME=admin"
+echo "   ADMIN_PASSWORD=strong-password"
+echo "   JWT_SECRET=long-random-secret"
 echo "   DATABASE_URL=./database.sqlite"
 
 # Развернуть
