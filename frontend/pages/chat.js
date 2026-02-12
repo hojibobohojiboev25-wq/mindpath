@@ -1,80 +1,137 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { io } from 'socket.io-client';
 
 export default function GlobalChat() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeUsers, setActiveUsers] = useState(0);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState([]);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const socketRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     // Load user profile
     const storedProfile = localStorage.getItem('user_profile');
     if (storedProfile) {
       try {
-        setUser(JSON.parse(storedProfile));
+        const profileData = JSON.parse(storedProfile);
+        setUser(profileData);
+
+        // Connect to Socket.IO
+        const socket = io(process.env.NODE_ENV === 'production'
+          ? 'https://mindpath-amber.vercel.app'
+          : 'http://localhost:3000', {
+          path: '/api/chat/socket'
+        });
+
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+          console.log('Connected to chat server');
+          socket.emit('join_chat', profileData);
+        });
+
+        socket.on('disconnect', () => {
+          console.log('Disconnected from chat server');
+        });
+
+        socket.on('chat_history', (history) => {
+          setMessages(history);
+        });
+
+        socket.on('message', (message) => {
+          setMessages(prev => [...prev, message]);
+        });
+
+        socket.on('active_users', (count) => {
+          setActiveUsers(count);
+        });
+
+        socket.on('user_typing', (data) => {
+          setTypingUsers(prev => {
+            const filtered = prev.filter(u => u.userName !== data.userName);
+            if (data.isTyping) {
+              return [...filtered, data];
+            }
+            return filtered;
+          });
+        });
+
+        socket.on('connect_error', (error) => {
+          console.error('Socket connection error:', error);
+        });
+
       } catch (error) {
         console.error('Error loading profile:', error);
       }
     }
+
     setIsLoading(false);
 
-    // Load chat messages
-    loadMessages();
-
-    // Set up polling for new messages
-    const interval = setInterval(loadMessages, 3000); // Poll every 3 seconds
-
-    return () => clearInterval(interval);
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
   }, []);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const loadMessages = async () => {
-    try {
-      const response = await fetch('/api/chat/messages');
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data.messages || []);
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
+  const sendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !user || !socketRef.current) return;
+
+    socketRef.current.emit('send_message', {
+      content: newMessage.trim()
+    });
+
+    setNewMessage('');
+    handleTypingStop();
+  };
+
+  const handleTypingStart = () => {
+    if (!socketRef.current || !user) return;
+
+    socketRef.current.emit('typing_start', {
+      name: user.name
+    });
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set new timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      handleTypingStop();
+    }, 1000);
+  };
+
+  const handleTypingStop = () => {
+    if (!socketRef.current || !user) return;
+
+    socketRef.current.emit('typing_stop', {
+      name: user.name
+    });
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
     }
   };
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !user) return;
-
-    try {
-      const messageData = {
-        userId: user.name + '_' + Date.now(), // Simple unique ID
-        userName: user.name,
-        userAvatar: user.avatar,
-        content: newMessage.trim(),
-        timestamp: new Date().toISOString()
-      };
-
-      const response = await fetch('/api/chat/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(messageData),
-      });
-
-      if (response.ok) {
-        setNewMessage('');
-        loadMessages(); // Refresh messages immediately
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+    handleTypingStart();
   };
 
   const scrollToBottom = () => {
@@ -134,15 +191,18 @@ export default function GlobalChat() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>{messages.length} сообщений</span>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span>{activeUsers} онлайн</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <span>{messages.length} сообщений</span>
+                </div>
+                <Link href="/questionnaire" className="btn-secondary text-sm">
+                  🧠 Анализ
+                </Link>
               </div>
-              <Link href="/questionnaire" className="btn-secondary text-sm">
-                🧠 Анализ
-              </Link>
-            </div>
           </div>
         </div>
       </header>
@@ -169,6 +229,22 @@ export default function GlobalChat() {
             ref={chatContainerRef}
             className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50"
           >
+            {/* Typing indicator */}
+            {typingUsers.length > 0 && (
+              <div className="flex items-center space-x-2 text-sm text-gray-500 px-4">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+                <span>
+                  {typingUsers.length === 1
+                    ? `${typingUsers[0].userName} печатает...`
+                    : `${typingUsers.length} пользователя печатает...`
+                  }
+                </span>
+              </div>
+            )}
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -240,10 +316,11 @@ export default function GlobalChat() {
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="Напишите сообщение..."
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 maxLength={500}
+                onBlur={handleTypingStop}
               />
               <button
                 type="submit"
@@ -255,7 +332,7 @@ export default function GlobalChat() {
               </button>
             </form>
             <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-              <span>Сообщения обновляются автоматически каждые 3 секунды</span>
+              <span>Real-time чат с WebSocket</span>
               <span>{newMessage.length}/500</span>
             </div>
           </div>

@@ -25,8 +25,8 @@
 - ✅ Рекомендации по развитию
 
 **Переменные окружения в Vercel:**
-- `OPENAI_API_KEY = ваш-openai-api-key`
-- `STABILITY_API_KEY = ваш-stability-api-key`
+- `OPENAI_API_KEY` - ваш API ключ от OpenAI
+- `STABILITY_API_KEY` - ваш API ключ от Stability AI
 
 ## 🔧 Отладка API
 
@@ -35,8 +35,10 @@
 1. **Переменные окружения:**
    ```bash
    # В Vercel Dashboard → Settings → Environment Variables
-   NEXT_PUBLIC_TELEGRAM_BOT_USERNAME = TrixGo_bot
-   TELEGRAM_BOT_TOKEN = ваш-бот-токен
+   OPENAI_API_KEY = ваш-api-ключ-openai
+   STABILITY_API_KEY = ваш-api-ключ-stability-ai
+   ADMIN_USERNAME = ваше-имя-пользователя-админа
+   ADMIN_PASSWORD = ваш-пароль-админа
    ```
 
 Для проверки работы API откройте в браузере:
