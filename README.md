@@ -5,6 +5,14 @@
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?style=flat-square&logo=github)](https://github.com/hojibobohojiboev25-wq/mindpath)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## 🚀 Статус развертывания
+
+### ✅ Frontend развернут!
+**URL:** https://mindpath-amber.vercel.app
+
+### 🔄 Следующий шаг: Backend
+Для полной функциональности авторизации нужен backend. См. `VERCEL_SETUP.md` для инструкций по развертыванию на Railway.
+
 ## 🚀 Особенности
 
 - **Авторизация через Telegram** - безопасная аутентификация без паролей
