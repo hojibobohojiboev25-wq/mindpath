@@ -305,7 +305,7 @@ function generateMindMapData(responses, personalityAnalysis) {
   return { nodes, edges };
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -394,6 +394,8 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to submit questionnaire' });
   }
 }
+
+module.exports = handler;
 
 // Generate mind map image using Stability AI
 async function generateMindMapImage(responses, personalityAnalysis) {

@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+const crypto = require('crypto');
 
 // Telegram auth verification
 function verifyTelegramAuth(data) {
@@ -95,3 +95,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Authentication failed' });
   }
 }
+
+module.exports = handler;
