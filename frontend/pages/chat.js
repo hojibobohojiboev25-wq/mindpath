@@ -9,9 +9,7 @@ export default function GlobalChat() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeUsers, setActiveUsers] = useState(0);
   const [isSending, setIsSending] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(0);
   const messagesEndRef = useRef(null);
-  const chatContainerRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
   const userIdRef = useRef(null);
@@ -50,7 +48,7 @@ export default function GlobalChat() {
       }
 
       // Leave chat
-      if (user && userIdRef.current) {
+      if (userIdRef.current) {
         leaveChat();
       }
     };
@@ -74,8 +72,7 @@ export default function GlobalChat() {
       });
 
       if (response.ok) {
-        console.log('Joined chat successfully');
-        loadMessages(); // Load initial messages
+        loadMessages();
       }
     } catch (error) {
       console.error('Error joining chat:', error);
@@ -102,12 +99,10 @@ export default function GlobalChat() {
   };
 
   const startPolling = () => {
-    // Poll every 2 seconds for new messages
     pollIntervalRef.current = setInterval(loadMessages, 2000);
   };
 
   const startHeartbeat = () => {
-    // Send heartbeat every 30 seconds to stay active
     heartbeatIntervalRef.current = setInterval(() => {
       fetch('/api/chat/socket', {
         method: 'POST',
@@ -131,7 +126,6 @@ export default function GlobalChat() {
         const data = await response.json();
         setMessages(data.messages || []);
         setActiveUsers(data.activeUsers || 0);
-        setLastUpdate(data.lastUpdate || 0);
       }
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -165,7 +159,7 @@ export default function GlobalChat() {
 
       if (response.ok) {
         setNewMessage('');
-        loadMessages(); // Refresh messages immediately
+        loadMessages();
       } else {
         const errorData = await response.json();
         alert('Ошибка отправки: ' + errorData.error);
@@ -270,7 +264,6 @@ export default function GlobalChat() {
 
           {/* Messages */}
           <div
-            ref={chatContainerRef}
             className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50"
           >
             {messages.length === 0 ? (
@@ -344,11 +337,10 @@ export default function GlobalChat() {
               <input
                 type="text"
                 value={newMessage}
-                onChange={handleInputChange}
+                onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Напишите сообщение..."
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 maxLength={500}
-                onBlur={handleTypingStop}
               />
               <button
                 type="submit"
@@ -360,7 +352,7 @@ export default function GlobalChat() {
               </button>
             </form>
             <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-              <span>Real-time чат с обновлением каждые 2 сек</span>
+              <span>Real-time чат: автообновление каждые 2 сек</span>
               <span>{newMessage.length}/500</span>
             </div>
           </div>

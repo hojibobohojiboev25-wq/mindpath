@@ -11,8 +11,10 @@ export default async function handler(req, res) {
 
   try {
     const { username, password } = req.body;
+    const incomingUsername = String(username || '').trim();
+    const incomingPassword = String(password || '');
 
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    if (incomingUsername === ADMIN_USERNAME && incomingPassword === ADMIN_PASSWORD) {
       // Create JWT token
       const token = jwt.sign(
         {

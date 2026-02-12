@@ -188,8 +188,10 @@ function extractSectionByEmoji(text, emoji) {
   const emojiIndex = text.indexOf(emoji);
   if (emojiIndex === -1) return null;
 
-  // Find the next emoji or end of text
-  const nextEmojiMatch = text.slice(emojiIndex + emoji.length).match(/^[🔍💪🎯🚀💡⚡]/);
+  // Find the next emoji marker after current section
+  const nextPart = text.slice(emojiIndex + emoji.length);
+  const markerRegex = /[🔍💪🎯🚀💡⚡]/g;
+  const nextEmojiMatch = markerRegex.exec(nextPart);
   const endIndex = nextEmojiMatch
     ? emojiIndex + emoji.length + nextEmojiMatch.index
     : text.length;
@@ -418,24 +420,7 @@ async function handler(req, res) {
       }
     ];
 
-    // Mock analysis result
-    const result = {
-      id: Date.now(),
-      personalityAnalysis,
-      mindMapData,
-      recommendations,
-      mindMapImageUrl: null, // No image generation in serverless
-      createdAt: new Date().toISOString(),
-      questionnaireDate: new Date().toISOString()
-    };
-
-    res.json({
-      success: true,
-      questionnaireId: Date.now(),
-      message: 'Questionnaire submitted successfully. Analysis completed.'
-    });
-
-    // Generate mind map image (optional - can be slow in serverless)
+    // Generate mind map image
     let mindMapImageUrl = null;
     try {
       if (process.env.STABILITY_API_KEY) {
@@ -446,7 +431,12 @@ async function handler(req, res) {
       // Continue without image
     }
 
-    // Mock analysis result
+    const aiStatus = {
+      openai: Boolean(process.env.OPENAI_API_KEY),
+      stability: Boolean(process.env.STABILITY_API_KEY),
+      mindMapImageGenerated: Boolean(mindMapImageUrl)
+    };
+
     const result = {
       id: Date.now(),
       personalityAnalysis,
@@ -461,6 +451,7 @@ async function handler(req, res) {
       success: true,
       questionnaireId: Date.now(),
       message: 'Questionnaire submitted successfully. Analysis completed.',
+      aiStatus,
       result
     });
 

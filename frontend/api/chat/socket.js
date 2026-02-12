@@ -26,7 +26,6 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     // Get chat history and active users
     const now = Date.now();
-    const timeDiff = now - lastUpdate;
 
     // Simulate user activity decay (remove inactive users after 5 minutes)
     for (const [userId, user] of activeUsers.entries()) {
