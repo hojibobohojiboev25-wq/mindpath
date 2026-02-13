@@ -1,21 +1,21 @@
 import { request } from './client';
 
 export function adminLogin(username, password) {
-  return request('/api/admin/login', {
+  return request('/admin/login', {
     method: 'POST',
     body: JSON.stringify({ username, password })
   });
 }
 
 export function verifyAdminToken(token) {
-  return request('/api/admin/verify', {
+  return request('/admin/verify', {
     method: 'POST',
     body: JSON.stringify({ token })
   });
 }
 
 export function getAdminUsers(token) {
-  return request('/api/admin/users', {
+  return request('/admin/users', {
     headers: {
       Authorization: `Bearer ${token}`
     }

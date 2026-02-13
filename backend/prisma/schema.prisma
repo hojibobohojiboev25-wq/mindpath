@@ -18,6 +18,8 @@ model Profile {
   chatReceipts    ChatReceipt[]
   submissions     QuestionnaireSubmission[]
   analysisResults AnalysisResult[]
+  aiThreads       AiAssistantThread[]
+  aiMessages      AiAssistantMessage[]
 }
 
 model ChatMessage {
@@ -94,6 +96,34 @@ model AuditLog {
   action    String
   metadata  Json?
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model AiAssistantThread {
+  id          String               @id @default(cuid())
+  profileId   String
+  title       String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  profile     Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  messages    AiAssistantMessage[]
+
+  @@index([profileId, updatedAt])
+}
+
+model AiAssistantMessage {
+  id         String             @id @default(cuid())
+  threadId   String
+  profileId  String
+  role       AiAssistantRole
+  content    String
+  createdAt  DateTime           @default(now())
+  thread     AiAssistantThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  profile    Profile            @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([profileId, createdAt])
 }
 
 enum MessageStatus {
@@ -107,4 +137,10 @@ enum JobStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum AiAssistantRole {
+  USER
+  ASSISTANT
+  SYSTEM
 }

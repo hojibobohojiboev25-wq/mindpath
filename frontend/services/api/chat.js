@@ -1,32 +1,32 @@
 import { request } from './client';
 
 export function joinChat(profile) {
-  return request('/api/chat/join', {
+  return request('/chat/join', {
     method: 'POST',
     body: JSON.stringify(profile)
   });
 }
 
 export function sendChatMessage(payload) {
-  return request('/api/chat/messages', {
+  return request('/chat/messages', {
     method: 'POST',
     body: JSON.stringify(payload)
   });
 }
 
 export function getChatHistory(limit = 100) {
-  return request(`/api/chat/history?limit=${limit}`);
+  return request(`/chat/history?limit=${limit}`);
 }
 
 export function markDelivered(messageId, profileId) {
-  return request('/api/chat/receipts/delivered', {
+  return request('/chat/receipts/delivered', {
     method: 'POST',
     body: JSON.stringify({ messageId, profileId })
   });
 }
 
 export function markRead(messageId, profileId) {
-  return request('/api/chat/receipts/read', {
+  return request('/chat/receipts/read', {
     method: 'POST',
     body: JSON.stringify({ messageId, profileId })
   });

@@ -4,6 +4,8 @@ const { healthRoutes } = require('./routes/health');
 const { chatRoutes } = require('./routes/chat');
 const { analysisRoutes } = require('./routes/analysis');
 const { adminRoutes } = require('./routes/admin');
+const { assistantRoutes } = require('./routes/assistant');
+const { fail } = require('./lib/response');
 
 async function buildApp(config) {
   const app = fastify({
@@ -28,15 +30,16 @@ async function buildApp(config) {
   });
 
   app.register(async (scope) => {
-    scope.register(healthRoutes, { prefix: '/api' });
-    scope.register(chatRoutes, { prefix: '/api' });
-    scope.register(async (a) => analysisRoutes(a, config), { prefix: '/api' });
-    scope.register(adminRoutes, { prefix: '/api' });
+    scope.register(healthRoutes, { prefix: '/api/v1' });
+    scope.register(chatRoutes, { prefix: '/api/v1' });
+    scope.register(async (a) => analysisRoutes(a, config), { prefix: '/api/v1' });
+    scope.register(adminRoutes, { prefix: '/api/v1' });
+    scope.register(async (a) => assistantRoutes(a, config), { prefix: '/api/v1' });
   });
 
   app.setErrorHandler((err, req, reply) => {
     req.log.error({ err }, 'request failed');
-    reply.status(err.statusCode || 500).send({ error: err.message || 'Internal server error' });
+    return fail(reply, err.statusCode || 500, 'INTERNAL_ERROR', err.message || 'Internal server error');
   });
 
   return app;

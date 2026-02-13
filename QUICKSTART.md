@@ -1,11 +1,11 @@
 # Quickstart (Vercel + Railway + Neon)
 
-## 1) Database (Neon)
+## 1) Neon PostgreSQL
 
-- Create a PostgreSQL database.
-- Copy connection URL.
+- Create a Neon DB and copy connection string.
+- Put it into backend `DATABASE_URL`.
 
-## 2) Backend (Railway)
+## 2) Backend on Railway
 
 ```bash
 cd backend
@@ -15,7 +15,7 @@ npm run prisma:dev
 npm run dev
 ```
 
-Set backend envs:
+Required backend envs:
 
 ```env
 PORT=3001
@@ -29,7 +29,7 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-me
 ```
 
-## 3) Frontend (Vercel or local)
+## 3) Frontend on Vercel
 
 ```bash
 cd frontend
@@ -37,22 +37,24 @@ npm install
 npm run dev
 ```
 
-`frontend/.env.local`:
+Frontend env:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
-For Vercel set:
+For Vercel:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://your-railway-domain.up.railway.app
+NEXT_PUBLIC_API_BASE_URL=https://<railway-backend-domain>
 ```
 
-## 4) Verify
+## 4) Smoke Test
 
-- `GET /api/health` on backend should return `status: ok`.
-- Open frontend and create a profile.
-- Send chat message from two tabs (websocket + persistence).
-- Submit questionnaire and wait for status completion.
-- Open `/admin/login` and verify users list loads.
+- `GET /api/v1/health` returns `success: true`
+- Create profile from `/`
+- Send messages in `/chat`
+- Submit in `/ai-analysis` and wait completion
+- Open `/ai-mindmap` and save revision
+- Open `/ai-assistant` and send assistant message
+- Login at `/admin/login` and verify users table on `/admin`

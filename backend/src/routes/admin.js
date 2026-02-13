@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const { verifyAdmin } = require('../services/authService');
 const { prisma } = require('../db');
+const { ok, fail } = require('../lib/response');
 
 async function adminRoutes(app) {
   app.post('/admin/login', async (req, reply) => {
@@ -9,10 +10,10 @@ async function adminRoutes(app) {
       password: z.string().min(1)
     }).safeParse(req.body || {});
     if (!parsed.success) {
-      return reply.status(400).send({ error: 'Invalid credentials payload' });
+      return fail(reply, 400, 'BAD_REQUEST', 'Invalid credentials payload');
     }
     const user = await verifyAdmin(parsed.data.username.trim(), parsed.data.password.trim());
-    if (!user) return reply.status(401).send({ error: 'Invalid username or password' });
+    if (!user) return fail(reply, 401, 'UNAUTHORIZED', 'Invalid username or password');
 
     const token = await reply.jwtSign(
       { sub: user.id, username: user.username, role: 'admin' },
@@ -21,30 +22,30 @@ async function adminRoutes(app) {
     await prisma.auditLog.create({
       data: { actor: user.username, action: 'admin_login_success' }
     });
-    return reply.send({ token });
+    return ok(reply, { token });
   });
 
   app.post('/admin/verify', async (req, reply) => {
     const parsed = z.object({ token: z.string().min(1) }).safeParse(req.body || {});
-    if (!parsed.success) return reply.status(400).send({ valid: false });
+    if (!parsed.success) return fail(reply, 400, 'BAD_REQUEST', 'Invalid token payload');
 
     try {
       const decoded = await app.jwt.verify(parsed.data.token);
-      return reply.send({ valid: true, user: decoded });
+      return ok(reply, { valid: true, user: decoded });
     } catch {
-      return reply.status(401).send({ valid: false });
+      return fail(reply, 401, 'UNAUTHORIZED', 'Token is invalid');
     }
   });
 
   app.get('/admin/users', async (req, reply) => {
     const auth = req.headers.authorization;
     if (!auth?.startsWith('Bearer ')) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return fail(reply, 401, 'UNAUTHORIZED', 'Unauthorized');
     }
     try {
       await app.jwt.verify(auth.slice(7));
     } catch {
-      return reply.status(401).send({ error: 'Invalid token' });
+      return fail(reply, 401, 'UNAUTHORIZED', 'Invalid token');
     }
 
     const users = await prisma.profile.findMany({
@@ -63,7 +64,7 @@ async function adminRoutes(app) {
       messagesCount: u._count.chatMessages,
       analysesCount: u._count.analysisResults
     }));
-    return reply.send({
+    return ok(reply, {
       users: rows,
       stats: {
         totalUsers: rows.length,

@@ -1,4 +1,5 @@
 const { submitQuestionnaireSchema, updateMindMapSchema } = require('../validators/analysis');
+const { ok, fail } = require('../lib/response');
 const {
   submitQuestionnaire,
   processSubmission,
@@ -57,45 +58,45 @@ async function analysisRoutes(app, config) {
       },
       { id: 'future_vision', question: 'Как вы видите себя через 5 лет?', type: 'text', category: 'vision' }
     ];
-    return reply.send({ questions });
+    return ok(reply, { questions });
   });
 
   app.post('/questionnaire/submit', async (req, reply) => {
     const parsed = submitQuestionnaireSchema.safeParse(req.body || {});
     if (!parsed.success) {
-      return reply.status(400).send({ error: 'Invalid questionnaire payload' });
+      return fail(reply, 400, 'BAD_REQUEST', 'Invalid questionnaire payload');
     }
     const submission = await submitQuestionnaire(parsed.data);
     processSubmission(submission.id, { openAiApiKey: config.openAiApiKey }).catch((err) => {
       app.log.error({ err, submissionId: submission.id }, 'AI submission processing failed');
     });
-    return reply.send({ success: true, submissionId: submission.id, status: 'SUBMITTED' });
+    return ok(reply, { submissionId: submission.id, status: 'SUBMITTED' });
   });
 
   app.get('/questionnaire/status/:submissionId', async (req, reply) => {
     const status = getSubmissionStatus(req.params.submissionId);
-    return reply.send(status);
+    return ok(reply, status);
   });
 
   app.get('/results/latest', async (req, reply) => {
     const profileId = req.query.profileId;
     if (!profileId) {
-      return reply.status(400).send({ error: 'profileId is required' });
+      return fail(reply, 400, 'BAD_REQUEST', 'profileId is required');
     }
     const result = await getLatestResult(profileId);
     if (!result) {
-      return reply.status(404).send({ error: 'No results found' });
+      return fail(reply, 404, 'NOT_FOUND', 'No results found');
     }
-    return reply.send({ result });
+    return ok(reply, { result });
   });
 
   app.patch('/mind-map/:analysisResultId', async (req, reply) => {
     const parsed = updateMindMapSchema.safeParse(req.body || {});
     if (!parsed.success) {
-      return reply.status(400).send({ error: 'Invalid mind map payload' });
+      return fail(reply, 400, 'BAD_REQUEST', 'Invalid mind map payload');
     }
     const updated = await updateMindMap(req.params.analysisResultId, parsed.data.data);
-    return reply.send({ success: true, result: updated });
+    return ok(reply, { result: updated });
   });
 }
 
